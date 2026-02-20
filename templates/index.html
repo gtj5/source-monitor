@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Source Monitor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f4f8;
+      color: #1a2533;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #1F4E79;
+      color: #fff;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: .02em; }
+    header .subtitle { font-size: .78rem; opacity: .7; margin-top: 2px; }
+
+    /* ── Layout ── */
+    main { max-width: 860px; margin: 28px auto; padding: 0 16px 48px; }
+
+    /* ── How it works banner ── */
+    .how-it-works {
+      background: #e8f0f9;
+      border: 1px solid #c5d8ef;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 22px;
+    }
+    .how-it-works h2 {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #1F4E79;
+      margin-bottom: 12px;
+    }
+    .steps {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+    }
+    .step {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 0 14px 0 0;
+    }
+    .step:last-child { padding-right: 0; }
+    .step + .step {
+      border-left: 1px solid #c5d8ef;
+      padding-left: 14px;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      background: #1F4E79;
+      color: #fff;
+      border-radius: 50%;
+      font-size: .72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text strong {
+      display: block;
+      font-size: .82rem;
+      color: #1a2533;
+      margin-bottom: 2px;
+    }
+    .step-text span {
+      font-size: .77rem;
+      color: #546e7a;
+      line-height: 1.45;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border: 1px solid #d5dde8;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #e8f0f9;
+      border-bottom: 1px solid #d5dde8;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header-title {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #1F4E79;
+    }
+    .card-header-hint {
+      font-size: .74rem;
+      color: #607d8b;
+      font-style: italic;
+    }
+    .card-body { padding: 16px 18px; }
+
+    /* ── Info callouts ── */
+    .info-box {
+      background: #f7f9fc;
+      border-left: 3px solid #1F4E79;
+      border-radius: 0 5px 5px 0;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: .82rem;
+      color: #37474f;
+      line-height: 1.55;
+    }
+    .info-box strong { color: #1F4E79; }
+    .info-box ul { margin: 6px 0 0 16px; }
+    .info-box ul li { margin-bottom: 3px; }
+
+    .warn-box {
+      background: #fffbf0;
+      border-left: 3px solid #f0a500;
+      border-radius: 0 5px 5px 0;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: .82rem;
+      color: #5d4037;
+      line-height: 1.55;
+    }
+    .warn-box strong { color: #e65100; }
+
+    /* ── Flash messages ── */
+    .flashes { list-style: none; margin-bottom: 16px; }
+    .flashes li {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: .88rem;
+      margin-bottom: 8px;
+    }
+    .flashes li.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .flashes li.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 5px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: filter .15s;
+    }
+    .btn:hover { filter: brightness(.92); }
+    .btn-primary   { background: #1F4E79; color: #fff; }
+    .btn-success   { background: #28a745; color: #fff; }
+    .btn-danger    { background: #dc3545; color: #fff; font-size: .78rem; padding: 4px 10px; }
+    .btn-secondary { background: #6c757d; color: #fff; }
+    .btn-run       { background: #28a745; color: #fff; font-size: .9rem; padding: 8px 18px; }
+
+    /* ── Keywords row ── */
+    .kw-row { display: flex; gap: 10px; align-items: center; }
+    .kw-row input[type="text"] {
+      flex: 1;
+      padding: 7px 11px;
+      border: 1px solid #b0bec5;
+      border-radius: 5px;
+      font-size: .88rem;
+    }
+
+    /* ── Sources table ── */
+    .source-list { width: 100%; border-collapse: collapse; }
+    .source-list th, .source-list td {
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e8edf3;
+      font-size: .87rem;
+    }
+    .source-list th {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #607d8b;
+      font-weight: 600;
+    }
+    .source-list tr:last-child td { border-bottom: none; }
+    .source-list tr:hover td { background: #f7f9fc; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .badge-rss    { background: #fff3cd; color: #856404; }
+    .badge-scrape { background: #cce5ff; color: #004085; }
+
+    /* ── Add source form ── */
+    .add-toggle {
+      background: none;
+      border: 2px dashed #1F4E79;
+      color: #1F4E79;
+      font-weight: 600;
+      font-size: .85rem;
+      padding: 7px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .add-toggle:hover { background: #e8f0f9; }
+
+    #add-form {
+      margin-top: 14px;
+      padding: 16px;
+      background: #f7f9fc;
+      border: 1px solid #d5dde8;
+      border-radius: 6px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    label.field-label {
+      display: block;
+      font-size: .75rem;
+      font-weight: 600;
+      color: #455a64;
+      margin-bottom: 3px;
+      letter-spacing: .04em;
+    }
+    .field-hint {
+      font-size: .72rem;
+      color: #90a4ae;
+      margin-top: 3px;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #b0bec5;
+      border-radius: 4px;
+      font-size: .85rem;
+    }
+    input[type="text"]:focus, input[type="url"]:focus,
+    .kw-row input[type="text"]:focus {
+      outline: none;
+      border-color: #1F4E79;
+      box-shadow: 0 0 0 2px rgba(31,78,121,.15);
+    }
+
+    .type-radios { display: flex; gap: 20px; align-items: center; }
+    .type-radios label { font-size: .85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+    .scrape-fields { margin-top: 12px; }
+    .scrape-fields .section-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #607d8b;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #d5dde8;
+      padding-bottom: 4px;
+    }
+    .form-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+
+    /* ── Pipeline log ── */
+    .log-block {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: .8rem;
+      line-height: 1.6;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-block.error { color: #ff7b7b; }
+    .log-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #607d8b;
+      margin-bottom: 6px;
+    }
+
+    /* ── CSV section ── */
+    .csv-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .csv-description {
+      font-size: .82rem;
+      color: #546e7a;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Source Monitor</h1>
+    <div class="subtitle">Automated news &amp; regulatory feed tracker</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a class="btn btn-secondary" href="/download/csv" style="font-size:.85rem;padding:7px 14px;">&#8681; Download CSV</a>
+    <form method="post" action="/run">
+      <button class="btn btn-run" type="submit">&#9654; Run Pipeline</button>
+    </form>
+  </div>
+</header>
+
+<main>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── How it works ── -->
+  <div class="how-it-works">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>Add Sources</strong>
+          <span>Point the tool at RSS feeds or web pages you want to monitor. Sources are fetched every time you run the pipeline.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <strong>Set Keywords (optional)</strong>
+          <span>Only items whose title or summary contains at least one keyword will be saved. Leave blank to capture everything.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <strong>Run the Pipeline</strong>
+          <span>Fetches all sources, applies your keyword filter, deduplicates against previous runs, and saves new items.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <strong>Export Results</strong>
+          <span>Download a CSV of all saved items at any time. The pipeline also auto-generates an XLSX report and an HTML site.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Keywords ── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Keywords</span>
+      <span class="card-header-hint">Filters what gets saved during a pipeline run</span>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <strong>How keywords work:</strong> When you run the pipeline, only items whose <em>title or summary</em> contains
+        at least one of these keywords are saved to the data file. Items that don't match are discarded.
+        <ul>
+          <li>Leave blank to save <strong>all</strong> items from every source.</li>
+          <li>Keywords are <strong>case-insensitive</strong> — "Bitcoin" matches "bitcoin".</li>
+          <li>Changing keywords only affects the <em>next</em> run — previously saved items are not removed.</li>
+        </ul>
+      </div>
+      <form method="post" action="/keywords/save">
+        <div class="kw-row">
+          <input
+            type="text"
+            name="keywords"
+            value="{{ keywords | join(', ') }}"
+            placeholder="e.g. crypto, enforcement, bitcoin, fraud"
+          >
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+        <p style="font-size:.78rem;color:#607d8b;margin-top:7px;">
+          Enter keywords separated by commas. Currently
+          {% if keywords %}
+            filtering for: <strong>{{ keywords | join(', ') }}</strong>
+          {% else %}
+            <strong>no filter</strong> — all items are kept.
+          {% endif %}
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Sources ── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Sources</span>
+      <span class="card-header-hint">{{ sources | length }} configured</span>
+    </div>
+    <div class="card-body">
+
+      <div class="info-box">
+        <strong>Sources</strong> are the feeds and pages the pipeline fetches from. Two types are supported:
+        <ul>
+          <li><strong>RSS</strong> — provide the feed URL; items are parsed automatically.</li>
+          <li><strong>Scrape</strong> — provide a web page URL plus CSS selectors that tell the tool where to find item titles, links, dates, and summaries on the page.</li>
+        </ul>
+        Items are <strong>deduplicated by URL</strong> — re-running the pipeline won't create duplicates.
+      </div>
+
+      {% if sources %}
+        <table class="source-list">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Name</th>
+              <th>URL</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for src in sources %}
+            <tr>
+              <td style="color:#90a4ae;font-size:.78rem;">{{ loop.index }}</td>
+              <td>
+                <span class="badge badge-{{ src.type }}">{{ src.type }}</span>
+              </td>
+              <td>{{ src.name }}</td>
+              <td style="color:#546e7a;font-size:.8rem;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ src.url }}
+              </td>
+              <td>
+                <form method="post" action="/source/delete/{{ loop.index0 }}"
+                      onsubmit="return confirm('Remove \'{{ src.name }}\'?')">
+                  <button class="btn btn-danger" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p style="color:#90a4ae;font-size:.88rem;">No sources configured. Add one below to get started.</p>
+      {% endif %}
+
+      <!-- Add source toggle -->
+      <button class="add-toggle" type="button" onclick="toggleAddForm()">+ Add Source</button>
+
+      <div id="add-form" style="display:none;">
+        <form method="post" action="/source/add">
+
+          <div class="form-grid">
+            <div>
+              <label class="field-label">Name</label>
+              <input type="text" name="name" placeholder="e.g. SEC Press Releases" required>
+              <div class="field-hint">A label to identify this source in reports.</div>
+            </div>
+            <div>
+              <label class="field-label">URL</label>
+              <input type="text" name="url" placeholder="https://…" required>
+              <div class="field-hint">The RSS feed URL, or the web page URL to scrape.</div>
+            </div>
+            <div class="full">
+              <label class="field-label">Type</label>
+              <div class="type-radios">
+                <label>
+                  <input type="radio" name="type" value="rss" checked onchange="toggleScrapeFields(this)">
+                  RSS &mdash; <span style="color:#607d8b;font-size:.8rem;">standard feed, no selectors needed</span>
+                </label>
+                <label>
+                  <input type="radio" name="type" value="scrape" onchange="toggleScrapeFields(this)">
+                  Scrape &mdash; <span style="color:#607d8b;font-size:.8rem;">HTML page, requires CSS selectors below</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div id="scrape-fields" class="scrape-fields" style="display:none;">
+            <div class="section-label">CSS Selectors — tell the scraper where to find each field on the page</div>
+            <div class="warn-box">
+              Open the target page in your browser, right-click an item, and choose <strong>Inspect</strong> to find the correct CSS selectors.
+              Only <strong>Items selector</strong> is required; the rest are optional but recommended.
+            </div>
+            <div class="form-grid">
+              <div>
+                <label class="field-label">Items selector <span style="color:#dc3545;">*</span></label>
+                <input type="text" name="sel_items" placeholder="li.collection__item">
+                <div class="field-hint">Selects the repeating container for each news item.</div>
+              </div>
+              <div>
+                <label class="field-label">Title</label>
+                <input type="text" name="sel_title" placeholder="h3 a">
+                <div class="field-hint">Element whose text becomes the item title.</div>
+              </div>
+              <div>
+                <label class="field-label">Link</label>
+                <input type="text" name="sel_link" placeholder="h3 a">
+                <div class="field-hint">Element whose <code>href</code> becomes the item URL.</div>
+              </div>
+              <div>
+                <label class="field-label">Summary</label>
+                <input type="text" name="sel_summary" placeholder="div.description">
+                <div class="field-hint">Element whose text becomes the item summary.</div>
+              </div>
+              <div>
+                <label class="field-label">Date</label>
+                <input type="text" name="sel_date" placeholder="time">
+                <div class="field-hint">Element containing the publication date.</div>
+              </div>
+              <div>
+                <label class="field-label">Date attribute</label>
+                <input type="text" name="sel_date_attr" placeholder="datetime">
+                <div class="field-hint">If the date is in an HTML attribute (e.g. <code>datetime</code>), enter the attribute name here. Leave blank to use the element's text.</div>
+              </div>
+              <div class="full">
+                <label class="field-label">Link prefix</label>
+                <input type="text" name="sel_link_prefix" placeholder="https://www.sec.gov">
+                <div class="field-hint">Prepended to relative <code>href</code> values. Use when links on the page are like <code>/news/article</code> instead of full URLs.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-success" type="submit">Add Source</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Export / CSV ── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Export</span>
+      <span class="card-header-hint">Downloads from the current saved data</span>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <strong>The CSV contains all items saved so far</strong> — everything that has passed the keyword filter across
+        all pipeline runs. Columns: <em>source, title, url, published, summary, created_at</em>.
+        <br><br>
+        <strong>To reset and start fresh:</strong> delete <code>items.json</code> from the project folder, then re-run
+        the pipeline. The next run will fetch everything as if it were the first time.
+      </div>
+      <div class="csv-row">
+        <div class="csv-description">
+          The pipeline also auto-generates <code>report.xlsx</code> and an HTML site in the <code>site/</code> folder
+          every time it runs.
+        </div>
+        <a class="btn btn-secondary" href="/download/csv" style="white-space:nowrap;">&#8681; Download CSV</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pipeline output ── -->
+  {% if log is not none %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Pipeline Output</span>
+      <span class="card-header-hint">Log from the most recent run</span>
+    </div>
+    <div class="card-body">
+      <div class="info-box" style="margin-bottom:12px;">
+        Each line shows what the pipeline fetched. <strong>New items saved</strong> is the count of items added this
+        run that weren't already in the data file. A count of 0 means all fetched items were already seen before.
+      </div>
+      {% if log_error %}
+        <div class="log-label" style="color:#dc3545;">Error output</div>
+        <pre class="log-block error">{{ log_error }}</pre>
+        {% if log %}
+          <div class="log-label" style="margin-top:12px;">Standard output</div>
+        {% endif %}
+      {% endif %}
+      {% if log %}
+        <pre class="log-block">{{ log }}</pre>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</main>
+
+<script>
+  function toggleAddForm() {
+    var f = document.getElementById('add-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleScrapeFields(radio) {
+    var sf = document.getElementById('scrape-fields');
+    sf.style.display = radio.value === 'scrape' ? 'block' : 'none';
+  }
+</script>
+
+</body>
+</html>

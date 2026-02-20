@@ -1,0 +1,7 @@
+feedparser
+requests
+beautifulsoup4
+openpyxl
+pyyaml
+python-dotenv
+flask

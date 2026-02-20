@@ -1,0 +1,26 @@
+sources:
+- name: SEC Press Releases
+  type: rss
+  url: https://www.sec.gov/news/pressreleases.rss
+- name: SEC Litigation Releases
+  type: rss
+  url: https://www.sec.gov/enforcement-litigation/litigation-releases/rss
+- name: SEC Open Meetings
+  type: scrape
+  url: https://www.sec.gov/news/upcoming-events
+  selectors:
+    items: li.usa-collection__item
+    title: h3.usa-collection__heading a
+    link: h3.usa-collection__heading a
+    link_prefix: https://www.sec.gov
+    summary: div.usa-collection__description
+    date: time
+    date_attr: datetime
+keywords: []
+output:
+  json: true
+  xlsx: true
+  html: true
+  data_file: items.json
+  xlsx_file: report.xlsx
+  html_dir: site
