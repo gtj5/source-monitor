@@ -587,6 +587,32 @@
     </div>
   </div>
 
+  <!-- ── Cron log ── -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">Pipeline Log</span>
+      <span class="card-header-hint">
+        {% if pipeline_log %}
+          Last {{ pipeline_log.split('\n') | length }} lines from pipeline.log &nbsp;·&nbsp;
+          <a href="/" style="color:#1F4E79;font-style:normal;">&#8635; Refresh</a>
+        {% else %}
+          No log yet — pipeline hasn't run via cron yet
+        {% endif %}
+      </span>
+    </div>
+    <div class="card-body">
+      {% if pipeline_log %}
+        <pre class="log-block">{{ pipeline_log }}</pre>
+      {% else %}
+        <div class="info-box">
+          <strong>pipeline.log</strong> will appear here after the cron job runs for the first time
+          (every 4 hours at midnight, 4am, 8am, noon, 4pm, 8pm), or after you click
+          <strong>Run Pipeline</strong> above.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- ── Pipeline output ── -->
   {% if log is not none %}
   <div class="card">

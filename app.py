@@ -18,7 +18,16 @@ from flask import Flask, flash, redirect, render_template, request, url_for, Res
 app = Flask(__name__)
 app.secret_key = "source-monitor-secret"
 
-CONFIG_FILE = Path(__file__).parent / "config.yaml"
+CONFIG_FILE  = Path(__file__).parent / "config.yaml"
+PIPELINE_LOG = Path(__file__).parent / "pipeline.log"
+LOG_TAIL     = 200  # max lines to show in the UI
+
+
+def read_pipeline_log() -> str | None:
+    if not PIPELINE_LOG.exists():
+        return None
+    lines = PIPELINE_LOG.read_text().splitlines()
+    return "\n".join(lines[-LOG_TAIL:])
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +57,7 @@ def index():
         keywords=cfg.get("keywords", []),
         log=None,
         log_error=None,
+        pipeline_log=read_pipeline_log(),
     )
 
 
@@ -123,6 +133,7 @@ def run_pipeline():
         keywords=cfg.get("keywords", []),
         log=result.stdout or "(no output)",
         log_error=log_error,
+        pipeline_log=read_pipeline_log(),
     )
 
 
