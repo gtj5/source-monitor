@@ -188,31 +188,32 @@ def download_csv_source(source_name: str):
 
 
 _PREVIEW_TEMPLATE = """
+{% if items %}
 <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
   <thead>
     <tr>
-      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Title</th>
-      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Published</th>
-      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Summary</th>
+      <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Title</th>
+      <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Published</th>
+      <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Summary</th>
     </tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
-      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-        <a href="{{ item.url }}" target="_blank" style="color:#1F4E79;text-decoration:none;">{{ item.title or '—' }}</a>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <a href="{{ item.url }}" target="_blank" style="color:#1D4ED8;text-decoration:none;font-weight:600;">{{ item.title or '—' }}</a>
       </td>
-      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;white-space:nowrap;color:#607d8b;">{{ item.published or '—' }}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;color:#37474f;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;white-space:nowrap;color:#94A3B8;">{{ item.published or '—' }}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;color:#475569;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% if total > 5 %}
-<p style="font-size:.75rem;color:#90a4ae;margin-top:6px;">Showing 5 of {{ total }} items. Download CSV for full data.</p>
+<p style="font-size:.72rem;color:#94A3B8;margin-top:8px;">Showing 5 of {{ total }} items &mdash; download the CSV for the full list.</p>
 {% endif %}
-{% if not items %}
-<p style="color:#90a4ae;font-size:.82rem;">No data yet for this source — run the pipeline first.</p>
+{% else %}
+<p style="color:#94A3B8;font-size:.82rem;">No data for this source yet &mdash; run the pipeline first.</p>
 {% endif %}
 """
 

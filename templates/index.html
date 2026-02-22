@@ -5,376 +5,483 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Source Monitor</title>
   <style>
+    /* ─── Reset ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ─── Base ───────────────────────────────────────────── */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f0f4f8;
-      color: #1a2533;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #F1F5F9;
+      color: #0F172A;
       min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
     }
 
-    /* ── Header ── */
-    header {
-      background: #1F4E79;
-      color: #fff;
-      padding: 0 24px;
+    /* ─── Header ─────────────────────────────────────────── */
+    .site-header {
+      background: #1E3A5F;
+      padding: 14px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 56px;
+      gap: 20px;
     }
-    header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: .02em; }
-    header .subtitle { font-size: .78rem; opacity: .7; margin-top: 2px; }
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -.01em;
+    }
+    .brand-sub {
+      font-size: .75rem;
+      color: rgba(255,255,255,.55);
+      margin-top: 1px;
+    }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
 
-    /* ── Layout ── */
-    main { max-width: 860px; margin: 28px auto; padding: 0 16px 48px; }
+    /* ─── Page ───────────────────────────────────────────── */
+    .page { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
 
-    /* ── How it works banner ── */
-    .how-it-works {
-      background: #e8f0f9;
-      border: 1px solid #c5d8ef;
+    /* ─── Buttons ────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border: none;
       border-radius: 8px;
-      padding: 18px 20px;
-      margin-bottom: 22px;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: filter .15s, box-shadow .15s;
+      line-height: 1;
+      white-space: nowrap;
     }
-    .how-it-works h2 {
-      font-size: .8rem;
+    .btn:hover { filter: brightness(.92); }
+
+    .btn-run {
+      background: #059669;
+      color: #fff;
+      font-size: .95rem;
+      padding: 10px 22px;
+      box-shadow: 0 2px 8px rgba(5,150,105,.3);
+    }
+    .btn-run:hover { filter: brightness(.9); }
+    .btn-primary { background: #1E3A5F; color: #fff; }
+    .btn-outline-white {
+      background: transparent;
+      color: rgba(255,255,255,.85);
+      border: 1.5px solid rgba(255,255,255,.3);
+      font-size: .85rem;
+    }
+    .btn-outline-white:hover { background: rgba(255,255,255,.1); filter: none; }
+    .btn-ghost {
+      background: #fff;
+      border: 1.5px solid #E2E8F0;
+      color: #475569;
+      font-size: .78rem;
+      padding: 5px 11px;
+    }
+    .btn-ghost:hover { border-color: #94A3B8; background: #F8FAFC; filter: none; }
+    .btn-danger-ghost {
+      background: #fff;
+      border: 1.5px solid #FECACA;
+      color: #DC2626;
+      font-size: .78rem;
+      padding: 5px 11px;
+    }
+    .btn-danger-ghost:hover { background: #FEF2F2; filter: none; }
+    .btn-csv-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fff;
+      border: 1.5px solid #BBF7D0;
+      color: #059669;
+      font-size: .78rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-csv-ghost:hover { background: #F0FDF4; filter: none; }
+    .btn-preview-ghost {
+      background: #fff;
+      border: 1.5px solid #BFDBFE;
+      color: #1D4ED8;
+      font-size: .78rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-preview-ghost:hover { background: #EFF6FF; }
+
+    /* ─── Flash messages ─────────────────────────────────── */
+    .flashes { list-style: none; margin-bottom: 20px; }
+    .flashes li {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: .875rem;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .flashes li.success { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .flashes li.error   { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+
+    /* ─── How it works ───────────────────────────────────── */
+    .how-it-works { margin-bottom: 28px; }
+    .section-eyebrow {
+      font-size: .68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #1F4E79;
+      letter-spacing: .1em;
+      color: #94A3B8;
       margin-bottom: 12px;
     }
-    .steps {
-      display: flex;
-      gap: 0;
-      align-items: stretch;
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
     }
-    .step {
-      flex: 1;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      padding: 0 14px 0 0;
-    }
-    .step:last-child { padding-right: 0; }
-    .step + .step {
-      border-left: 1px solid #c5d8ef;
-      padding-left: 14px;
+    .step-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04);
     }
     .step-num {
-      width: 22px;
-      height: 22px;
-      background: #1F4E79;
-      color: #fff;
-      border-radius: 50%;
-      font-size: .72rem;
-      font-weight: 700;
+      width: 28px;
+      height: 28px;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border-radius: 8px;
+      font-size: .78rem;
+      font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
+      margin-bottom: 12px;
     }
-    .step-text strong {
-      display: block;
-      font-size: .82rem;
-      color: #1a2533;
-      margin-bottom: 2px;
+    .step-card h3 {
+      font-size: .875rem;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 5px;
     }
-    .step-text span {
-      font-size: .77rem;
-      color: #546e7a;
-      line-height: 1.45;
+    .step-card p {
+      font-size: .78rem;
+      color: #64748B;
+      line-height: 1.55;
     }
 
-    /* ── Cards ── */
+    /* ─── Cards ──────────────────────────────────────────── */
     .card {
       background: #fff;
-      border: 1px solid #d5dde8;
-      border-radius: 8px;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
       margin-bottom: 20px;
       overflow: hidden;
     }
     .card-header {
-      background: #e8f0f9;
-      border-bottom: 1px solid #d5dde8;
-      padding: 10px 18px;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid #F1F5F9;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
     }
-    .card-header-title {
-      font-size: .75rem;
+    .card-title {
+      font-size: 1rem;
       font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: #1F4E79;
+      color: #0F172A;
     }
-    .card-header-hint {
-      font-size: .74rem;
-      color: #607d8b;
-      font-style: italic;
+    .card-subtitle {
+      font-size: .78rem;
+      color: #94A3B8;
+      margin-top: 2px;
     }
-    .card-body { padding: 16px 18px; }
+    .card-body { padding: 20px 24px; }
+    .card-body + .card-body { padding-top: 0; }
 
-    /* ── Info callouts ── */
+    /* ─── Info boxes ─────────────────────────────────────── */
     .info-box {
-      background: #f7f9fc;
-      border-left: 3px solid #1F4E79;
-      border-radius: 0 5px 5px 0;
-      padding: 10px 14px;
-      margin-bottom: 14px;
+      background: #F0F7FF;
+      border-left: 3px solid #3B82F6;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin-bottom: 18px;
       font-size: .82rem;
-      color: #37474f;
-      line-height: 1.55;
+      color: #1E3A5F;
+      line-height: 1.6;
     }
-    .info-box strong { color: #1F4E79; }
+    .info-box strong { color: #1E3A5F; font-weight: 700; }
     .info-box ul { margin: 6px 0 0 16px; }
-    .info-box ul li { margin-bottom: 3px; }
+    .info-box li { margin-bottom: 3px; }
 
     .warn-box {
-      background: #fffbf0;
-      border-left: 3px solid #f0a500;
-      border-radius: 0 5px 5px 0;
-      padding: 10px 14px;
-      margin-bottom: 14px;
+      background: #FFFBEB;
+      border-left: 3px solid #F59E0B;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin-bottom: 18px;
       font-size: .82rem;
-      color: #5d4037;
-      line-height: 1.55;
+      color: #78350F;
+      line-height: 1.6;
     }
-    .warn-box strong { color: #e65100; }
+    .warn-box strong { color: #92400E; }
 
-    /* ── Flash messages ── */
-    .flashes { list-style: none; margin-bottom: 16px; }
-    .flashes li {
+    /* ─── Inputs ─────────────────────────────────────────── */
+    input[type="text"], input[type="url"] {
+      width: 100%;
       padding: 10px 14px;
-      border-radius: 6px;
-      font-size: .88rem;
-      margin-bottom: 8px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: .875rem;
+      color: #0F172A;
+      background: #fff;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .flashes li.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .flashes li.error   { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-    /* ── Buttons ── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border: none;
-      border-radius: 5px;
-      font-size: .85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: filter .15s;
+    input[type="text"]:focus, input[type="url"]:focus {
+      outline: none;
+      border-color: #1E3A5F;
+      box-shadow: 0 0 0 3px rgba(30,58,95,.1);
     }
-    .btn:hover { filter: brightness(.92); }
-    .btn-primary   { background: #1F4E79; color: #fff; }
-    .btn-success   { background: #28a745; color: #fff; }
-    .btn-danger    { background: #dc3545; color: #fff; font-size: .78rem; padding: 4px 10px; }
-    .btn-secondary { background: #6c757d; color: #fff; }
-    .btn-run       { background: #28a745; color: #fff; font-size: .9rem; padding: 8px 18px; }
+    input::placeholder { color: #CBD5E1; }
 
-    /* ── Keywords row ── */
+    /* ─── Keywords ───────────────────────────────────────── */
     .kw-row { display: flex; gap: 10px; align-items: center; }
-    .kw-row input[type="text"] {
-      flex: 1;
-      padding: 7px 11px;
-      border: 1px solid #b0bec5;
-      border-radius: 5px;
-      font-size: .88rem;
+    .kw-row input { flex: 1; }
+    .kw-status {
+      font-size: .8rem;
+      color: #94A3B8;
+      margin-top: 9px;
+    }
+    .kw-status strong { color: #1E3A5F; font-weight: 700; }
+    .kw-pill {
+      display: inline-block;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border-radius: 20px;
+      padding: 1px 10px;
+      font-size: .75rem;
+      font-weight: 600;
+      margin: 0 2px;
     }
 
-    /* ── Sources table ── */
-    .source-list { width: 100%; border-collapse: collapse; }
-    .source-list th, .source-list td {
-      padding: 9px 12px;
-      text-align: left;
-      border-bottom: 1px solid #e8edf3;
-      font-size: .87rem;
-    }
-    .source-list th {
-      font-size: .72rem;
+    /* ─── Sources table ──────────────────────────────────── */
+    .sources-table { width: 100%; border-collapse: collapse; }
+    .sources-table thead th {
+      font-size: .68rem;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: #607d8b;
-      font-weight: 600;
+      letter-spacing: .08em;
+      color: #94A3B8;
+      font-weight: 700;
+      padding: 0 14px 10px;
+      text-align: left;
+      border-bottom: 1px solid #F1F5F9;
     }
-    .source-list tr:last-child td { border-bottom: none; }
-    .source-list tr:hover td { background: #f7f9fc; }
+    .sources-table tbody td {
+      padding: 14px;
+      border-bottom: 1px solid #F8FAFC;
+      vertical-align: middle;
+    }
+    .sources-table tbody tr:last-of-type > td { border-bottom: none; }
+    .sources-table tbody tr.data-row:hover > td { background: #FAFBFD; }
+
+    .src-name { font-weight: 600; font-size: .88rem; color: #0F172A; }
+    .src-url  { font-size: .75rem; color: #94A3B8; margin-top: 2px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
     .badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: .72rem;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: .65rem;
       font-weight: 700;
-      letter-spacing: .04em;
+      letter-spacing: .05em;
       text-transform: uppercase;
     }
-    .badge-rss    { background: #fff3cd; color: #856404; }
-    .badge-scrape { background: #cce5ff; color: #004085; }
+    .badge-rss    { background: #FEF9C3; color: #854D0E; }
+    .badge-scrape { background: #DBEAFE; color: #1D4ED8; }
 
-    /* ── Add source form ── */
-    .add-toggle {
-      background: none;
-      border: 2px dashed #1F4E79;
-      color: #1F4E79;
-      font-weight: 600;
-      font-size: .85rem;
-      padding: 7px 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 12px;
+    .row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+
+    /* ─── Inline source preview ──────────────────────────── */
+    .preview-row > td {
+      padding: 0 !important;
+      border-bottom: 2px solid #1E3A5F !important;
     }
-    .add-toggle:hover { background: #e8f0f9; }
+    .preview-inner {
+      padding: 16px 20px;
+      background: #F8FAFC;
+    }
+    .preview-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #94A3B8;
+      margin-bottom: 10px;
+    }
 
-    #add-form {
+    /* ─── Add source ─────────────────────────────────────── */
+    .add-toggle-btn {
+      width: 100%;
       margin-top: 14px;
-      padding: 16px;
-      background: #f7f9fc;
-      border: 1px solid #d5dde8;
-      border-radius: 6px;
+      padding: 11px;
+      background: none;
+      border: 1.5px dashed #CBD5E1;
+      border-radius: 10px;
+      color: #64748B;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .add-toggle-btn:hover { border-color: #1E3A5F; color: #1E3A5F; background: #F0F7FF; }
+
+    .add-form-panel {
+      margin-top: 14px;
+      padding: 20px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+    }
+    .add-form-title {
+      font-size: .875rem;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 16px;
     }
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 16px;
+      gap: 12px 16px;
     }
     .form-grid .full { grid-column: 1 / -1; }
-    label.field-label {
+    .field-label {
       display: block;
       font-size: .75rem;
       font-weight: 600;
-      color: #455a64;
-      margin-bottom: 3px;
-      letter-spacing: .04em;
+      color: #475569;
+      margin-bottom: 5px;
     }
     .field-hint {
       font-size: .72rem;
-      color: #90a4ae;
-      margin-top: 3px;
-    }
-    input[type="text"], input[type="url"] {
-      width: 100%;
-      padding: 7px 10px;
-      border: 1px solid #b0bec5;
-      border-radius: 4px;
-      font-size: .85rem;
-    }
-    input[type="text"]:focus, input[type="url"]:focus,
-    .kw-row input[type="text"]:focus {
-      outline: none;
-      border-color: #1F4E79;
-      box-shadow: 0 0 0 2px rgba(31,78,121,.15);
+      color: #94A3B8;
+      margin-top: 4px;
+      line-height: 1.45;
     }
 
-    .type-radios { display: flex; gap: 20px; align-items: center; }
-    .type-radios label { font-size: .85rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .type-cards { display: flex; gap: 10px; }
+    .type-card {
+      flex: 1;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .type-card:hover { border-color: #94A3B8; }
+    .type-card input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+    .type-card-label { font-size: .875rem; font-weight: 700; color: #0F172A; }
+    .type-card-desc  { font-size: .75rem; color: #94A3B8; margin-top: 2px; }
+    .type-card.active { border-color: #1E3A5F; background: #F0F7FF; }
 
-    .scrape-fields { margin-top: 12px; }
-    .scrape-fields .section-label {
-      font-size: .72rem;
+    .scrape-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #E2E8F0;
+    }
+    .scrape-section-label {
+      font-size: .68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .07em;
-      color: #607d8b;
-      margin-bottom: 8px;
-      border-bottom: 1px solid #d5dde8;
-      padding-bottom: 4px;
+      letter-spacing: .08em;
+      color: #94A3B8;
+      margin-bottom: 14px;
     }
-    .form-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+    .form-actions {
+      margin-top: 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
 
-    /* ── Pipeline log ── */
+    /* ─── Export card ────────────────────────────────────── */
+    .export-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .export-desc { font-size: .82rem; color: #64748B; line-height: 1.55; }
+
+    /* ─── Log ────────────────────────────────────────────── */
     .log-block {
-      background: #0d1117;
-      color: #c9d1d9;
+      background: #0F172A;
+      color: #94A3B8;
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: .8rem;
-      line-height: 1.6;
-      padding: 16px;
-      border-radius: 6px;
+      font-size: .78rem;
+      line-height: 1.75;
+      padding: 18px 20px;
+      border-radius: 10px;
       overflow-x: auto;
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .log-block.error { color: #ff7b7b; }
-    .log-label {
-      font-size: .72rem;
+    .log-block.stderr { color: #FCA5A5; }
+    .log-mini-label {
+      font-size: .68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .06em;
-      color: #607d8b;
-      margin-bottom: 6px;
+      letter-spacing: .08em;
+      color: #94A3B8;
+      margin-bottom: 8px;
     }
+    .log-mini-label.err { color: #F87171; }
 
-    /* ── CSV section ── */
-    .csv-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
+    /* ─── Empty state ────────────────────────────────────── */
+    .empty-state {
+      padding: 28px 20px;
+      text-align: center;
+      color: #94A3B8;
+      font-size: .875rem;
     }
-    .csv-description {
-      font-size: .82rem;
-      color: #546e7a;
-      line-height: 1.5;
-    }
-
-    /* ── Source preview ── */
-    .preview-row td {
-      padding: 0 !important;
-      border-bottom: 2px solid #1F4E79 !important;
-    }
-    .preview-inner {
-      padding: 12px 16px;
-      background: #f7f9fc;
-    }
-    .btn-preview {
-      background: none;
-      border: 1px solid #1F4E79;
-      color: #1F4E79;
-      font-size: .75rem;
-      padding: 3px 9px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn-preview:hover { background: #e8f0f9; }
-    .btn-csv-sm {
-      background: none;
-      border: 1px solid #6c757d;
-      color: #6c757d;
-      font-size: .75rem;
-      padding: 3px 9px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-csv-sm:hover { background: #f0f0f0; }
+    .empty-state strong { display: block; font-size: 1rem; color: #CBD5E1; margin-bottom: 4px; }
   </style>
 </head>
 <body>
 
-<header>
+<!-- ═══ Header ═══════════════════════════════════════════════════ -->
+<header class="site-header">
   <div>
-    <h1>Source Monitor</h1>
-    <div class="subtitle">Automated news &amp; regulatory feed tracker</div>
+    <div class="brand-name">Source Monitor</div>
+    <div class="brand-sub">Automated news &amp; regulatory feed tracker</div>
   </div>
-  <div style="display:flex;gap:10px;align-items:center;">
-    <a class="btn btn-secondary" href="/download/csv" style="font-size:.85rem;padding:7px 14px;">&#8681; Download CSV</a>
+  <div class="header-actions">
+    <a class="btn btn-outline-white" href="/download/csv">&#8681; Download All CSV</a>
     <form method="post" action="/run">
       <button class="btn btn-run" type="submit">&#9654; Run Pipeline</button>
     </form>
   </div>
 </header>
 
-<main>
+<div class="page">
 
+  <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <ul class="flashes">
@@ -385,133 +492,128 @@
     {% endif %}
   {% endwith %}
 
-  <!-- ── How it works ── -->
+  <!-- ═══ How it works ═══════════════════════════════════════════ -->
   <div class="how-it-works">
-    <h2>How it works</h2>
-    <div class="steps">
-      <div class="step">
+    <div class="section-eyebrow">How it works</div>
+    <div class="steps-grid">
+      <div class="step-card">
         <div class="step-num">1</div>
-        <div class="step-text">
-          <strong>Add Sources</strong>
-          <span>Point the tool at RSS feeds or web pages you want to monitor. Sources are fetched every time you run the pipeline.</span>
-        </div>
+        <h3>Add Sources</h3>
+        <p>Point the tool at RSS feeds or web pages you want to monitor. Sources are fetched every pipeline run.</p>
       </div>
-      <div class="step">
+      <div class="step-card">
         <div class="step-num">2</div>
-        <div class="step-text">
-          <strong>Set Keywords (optional)</strong>
-          <span>Only items whose title or summary contains at least one keyword will be saved. Leave blank to capture everything.</span>
-        </div>
+        <h3>Set Keywords</h3>
+        <p>Only items whose title or summary contains a keyword are saved. Leave blank to capture everything.</p>
       </div>
-      <div class="step">
+      <div class="step-card">
         <div class="step-num">3</div>
-        <div class="step-text">
-          <strong>Run the Pipeline</strong>
-          <span>Fetches all sources, applies your keyword filter, deduplicates against previous runs, and saves new items.</span>
-        </div>
+        <h3>Run the Pipeline</h3>
+        <p>Fetches all sources, applies your filter, deduplicates, and saves new items. Runs automatically every 4 hours.</p>
       </div>
-      <div class="step">
+      <div class="step-card">
         <div class="step-num">4</div>
-        <div class="step-text">
-          <strong>Export Results</strong>
-          <span>Download a CSV of all saved items at any time. The pipeline also auto-generates an XLSX report and an HTML site.</span>
-        </div>
+        <h3>Export Results</h3>
+        <p>Download a CSV of all saved items — all sources together, or one source at a time — at any time.</p>
       </div>
     </div>
   </div>
 
-  <!-- ── Keywords ── -->
+  <!-- ═══ Keywords ═══════════════════════════════════════════════ -->
   <div class="card">
     <div class="card-header">
-      <span class="card-header-title">Keywords</span>
-      <span class="card-header-hint">Filters what gets saved during a pipeline run</span>
+      <div>
+        <div class="card-title">Keywords</div>
+        <div class="card-subtitle">Filter what gets saved during each pipeline run</div>
+      </div>
     </div>
     <div class="card-body">
       <div class="info-box">
-        <strong>How keywords work:</strong> When you run the pipeline, only items whose <em>title or summary</em> contains
-        at least one of these keywords are saved to the data file. Items that don't match are discarded.
+        <strong>How keywords work:</strong> When the pipeline runs, only items whose <em>title or summary</em> contains
+        at least one keyword are saved. Items that don't match are discarded.
         <ul>
           <li>Leave blank to save <strong>all</strong> items from every source.</li>
-          <li>Keywords are <strong>case-insensitive</strong> — "Bitcoin" matches "bitcoin".</li>
+          <li>Keywords are <strong>case-insensitive</strong> — "Bitcoin" will match "bitcoin".</li>
           <li>Changing keywords only affects the <em>next</em> run — previously saved items are not removed.</li>
         </ul>
       </div>
       <form method="post" action="/keywords/save">
         <div class="kw-row">
-          <input
-            type="text"
-            name="keywords"
+          <input type="text" name="keywords"
             value="{{ keywords | join(', ') }}"
-            placeholder="e.g. crypto, enforcement, bitcoin, fraud"
-          >
-          <button class="btn btn-primary" type="submit">Save</button>
+            placeholder="e.g.  crypto, enforcement, bitcoin, fraud">
+          <button class="btn btn-primary" type="submit">Save Keywords</button>
         </div>
-        <p style="font-size:.78rem;color:#607d8b;margin-top:7px;">
-          Enter keywords separated by commas. Currently
+        <div class="kw-status">
           {% if keywords %}
-            filtering for: <strong>{{ keywords | join(', ') }}</strong>
+            Currently filtering for:
+            {% for kw in keywords %}<span class="kw-pill">{{ kw }}</span>{% endfor %}
           {% else %}
-            <strong>no filter</strong> — all items are kept.
+            No filter set &mdash; <strong>all items</strong> will be saved.
           {% endif %}
-        </p>
+        </div>
       </form>
     </div>
   </div>
 
-  <!-- ── Sources ── -->
+  <!-- ═══ Sources ════════════════════════════════════════════════ -->
   <div class="card">
     <div class="card-header">
-      <span class="card-header-title">Sources</span>
-      <span class="card-header-hint">{{ sources | length }} configured</span>
+      <div>
+        <div class="card-title">Sources</div>
+        <div class="card-subtitle">
+          {{ sources | length }} source{{ 's' if sources | length != 1 else '' }} configured
+        </div>
+      </div>
     </div>
     <div class="card-body">
 
       <div class="info-box">
-        <strong>Sources</strong> are the feeds and pages the pipeline fetches from. Two types are supported:
+        <strong>Sources</strong> are the feeds and pages the pipeline fetches from. Two types:
         <ul>
-          <li><strong>RSS</strong> — provide the feed URL; items are parsed automatically.</li>
-          <li><strong>Scrape</strong> — provide a web page URL plus CSS selectors that tell the tool where to find item titles, links, dates, and summaries on the page.</li>
+          <li><strong>RSS</strong> — paste the feed URL; items are parsed automatically.</li>
+          <li><strong>Scrape</strong> — paste a web page URL, then provide CSS selectors to tell the tool where titles, links, and dates are on the page.</li>
         </ul>
-        Items are <strong>deduplicated by URL</strong> — re-running the pipeline won't create duplicates.
+        Items are <strong>deduplicated by URL</strong> — running the pipeline multiple times won't create duplicates.
       </div>
 
       {% if sources %}
-        <table class="source-list">
+        <table class="sources-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Type</th>
-              <th>Name</th>
-              <th>URL</th>
-              <th></th>
+              <th style="width:36px;">#</th>
+              <th style="width:80px;">Type</th>
+              <th>Source</th>
+              <th style="text-align:right;">Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for src in sources %}
-            <tr>
-              <td style="color:#90a4ae;font-size:.78rem;">{{ loop.index }}</td>
+            <tr class="data-row">
+              <td style="color:#CBD5E1;font-size:.78rem;">{{ loop.index }}</td>
+              <td><span class="badge badge-{{ src.type }}">{{ src.type }}</span></td>
               <td>
-                <span class="badge badge-{{ src.type }}">{{ src.type }}</span>
+                <div class="src-name">{{ src.name }}</div>
+                <div class="src-url">{{ src.url }}</div>
               </td>
-              <td>{{ src.name }}</td>
-              <td style="color:#546e7a;font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                {{ src.url }}
-              </td>
-              <td style="white-space:nowrap;">
-                <div style="display:flex;gap:6px;align-items:center;">
-                  <button class="btn-preview" onclick="togglePreview({{ loop.index0 }}, this)">Preview</button>
-                  <a class="btn-csv-sm" href="/download/csv/{{ src.name | urlencode }}">&#8681; CSV</a>
+              <td>
+                <div class="row-actions">
+                  <button class="btn-preview-ghost" onclick="togglePreview({{ loop.index0 }}, this)">Preview</button>
+                  <a class="btn-csv-ghost" href="/download/csv/{{ src.name | urlencode }}">&#8681; CSV</a>
                   <form method="post" action="/source/delete/{{ loop.index0 }}"
                         onsubmit="return confirm('Remove \'{{ src.name }}\'?')" style="margin:0;">
-                    <button class="btn btn-danger" type="submit">Remove</button>
+                    <button class="btn-danger-ghost" type="submit">Remove</button>
                   </form>
                 </div>
               </td>
             </tr>
             <tr class="preview-row" id="preview-{{ loop.index0 }}" style="display:none;">
-              <td colspan="5">
-                <div class="preview-inner" id="preview-content-{{ loop.index0 }}">
-                  <span style="color:#90a4ae;font-size:.82rem;">Loading…</span>
+              <td colspan="4">
+                <div class="preview-inner">
+                  <div class="preview-label">Latest items from {{ src.name }}</div>
+                  <div id="preview-content-{{ loop.index0 }}">
+                    <span style="color:#94A3B8;font-size:.82rem;">Loading&hellip;</span>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -519,184 +621,207 @@
           </tbody>
         </table>
       {% else %}
-        <p style="color:#90a4ae;font-size:.88rem;">No sources configured. Add one below to get started.</p>
+        <div class="empty-state">
+          <strong>No sources yet</strong>
+          Add your first source below to get started.
+        </div>
       {% endif %}
 
-      <!-- Add source toggle -->
-      <button class="add-toggle" type="button" onclick="toggleAddForm()">+ Add Source</button>
+      <!-- Add source -->
+      <button class="add-toggle-btn" type="button" onclick="toggleAddForm()">
+        <span style="font-size:1.1rem;line-height:1;">+</span> Add a New Source
+      </button>
 
       <div id="add-form" style="display:none;">
-        <form method="post" action="/source/add">
+        <div class="add-form-panel">
+          <div class="add-form-title">New Source</div>
+          <form method="post" action="/source/add">
 
-          <div class="form-grid">
-            <div>
-              <label class="field-label">Name</label>
-              <input type="text" name="name" placeholder="e.g. SEC Press Releases" required>
-              <div class="field-hint">A label to identify this source in reports.</div>
-            </div>
-            <div>
-              <label class="field-label">URL</label>
-              <input type="text" name="url" placeholder="https://…" required>
-              <div class="field-hint">The RSS feed URL, or the web page URL to scrape.</div>
-            </div>
-            <div class="full">
-              <label class="field-label">Type</label>
-              <div class="type-radios">
-                <label>
-                  <input type="radio" name="type" value="rss" checked onchange="toggleScrapeFields(this)">
-                  RSS &mdash; <span style="color:#607d8b;font-size:.8rem;">standard feed, no selectors needed</span>
-                </label>
-                <label>
-                  <input type="radio" name="type" value="scrape" onchange="toggleScrapeFields(this)">
-                  Scrape &mdash; <span style="color:#607d8b;font-size:.8rem;">HTML page, requires CSS selectors below</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div id="scrape-fields" class="scrape-fields" style="display:none;">
-            <div class="section-label">CSS Selectors — tell the scraper where to find each field on the page</div>
-            <div class="warn-box">
-              Open the target page in your browser, right-click an item, and choose <strong>Inspect</strong> to find the correct CSS selectors.
-              Only <strong>Items selector</strong> is required; the rest are optional but recommended.
-            </div>
             <div class="form-grid">
               <div>
-                <label class="field-label">Items selector <span style="color:#dc3545;">*</span></label>
-                <input type="text" name="sel_items" placeholder="li.collection__item">
-                <div class="field-hint">Selects the repeating container for each news item.</div>
+                <label class="field-label">Source Name</label>
+                <input type="text" name="name" placeholder="e.g. SEC Press Releases" required>
+                <div class="field-hint">A short label used to identify this source in reports and downloads.</div>
               </div>
               <div>
-                <label class="field-label">Title</label>
-                <input type="text" name="sel_title" placeholder="h3 a">
-                <div class="field-hint">Element whose text becomes the item title.</div>
-              </div>
-              <div>
-                <label class="field-label">Link</label>
-                <input type="text" name="sel_link" placeholder="h3 a">
-                <div class="field-hint">Element whose <code>href</code> becomes the item URL.</div>
-              </div>
-              <div>
-                <label class="field-label">Summary</label>
-                <input type="text" name="sel_summary" placeholder="div.description">
-                <div class="field-hint">Element whose text becomes the item summary.</div>
-              </div>
-              <div>
-                <label class="field-label">Date</label>
-                <input type="text" name="sel_date" placeholder="time">
-                <div class="field-hint">Element containing the publication date.</div>
-              </div>
-              <div>
-                <label class="field-label">Date attribute</label>
-                <input type="text" name="sel_date_attr" placeholder="datetime">
-                <div class="field-hint">If the date is in an HTML attribute (e.g. <code>datetime</code>), enter the attribute name here. Leave blank to use the element's text.</div>
+                <label class="field-label">URL</label>
+                <input type="text" name="url" placeholder="https://…" required>
+                <div class="field-hint">The RSS feed URL, or the web page URL you want to scrape.</div>
               </div>
               <div class="full">
-                <label class="field-label">Link prefix</label>
-                <input type="text" name="sel_link_prefix" placeholder="https://www.sec.gov">
-                <div class="field-hint">Prepended to relative <code>href</code> values. Use when links on the page are like <code>/news/article</code> instead of full URLs.</div>
+                <label class="field-label">Source Type</label>
+                <div class="type-cards">
+                  <label class="type-card active" id="card-rss">
+                    <input type="radio" name="type" value="rss" checked onchange="switchType('rss')">
+                    <div>
+                      <div class="type-card-label">RSS Feed</div>
+                      <div class="type-card-desc">Standard news feed — paste the URL and you're done. No extra setup needed.</div>
+                    </div>
+                  </label>
+                  <label class="type-card" id="card-scrape">
+                    <input type="radio" name="type" value="scrape" onchange="switchType('scrape')">
+                    <div>
+                      <div class="type-card-label">Web Page (Scrape)</div>
+                      <div class="type-card-desc">For pages without a feed. You'll need to provide CSS selectors to locate items on the page.</div>
+                    </div>
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="form-actions">
-            <button class="btn btn-success" type="submit">Add Source</button>
-          </div>
-        </form>
+            <div id="scrape-fields" class="scrape-section" style="display:none;">
+              <div class="scrape-section-label">CSS Selectors &mdash; where to find each field on the page</div>
+              <div class="warn-box">
+                Open the target page in your browser, right-click an item, and choose <strong>Inspect</strong>
+                to find the right CSS selectors. Only <strong>Items selector</strong> is required.
+              </div>
+              <div class="form-grid">
+                <div>
+                  <label class="field-label">Items selector <span style="color:#DC2626;">*</span></label>
+                  <input type="text" name="sel_items" placeholder="li.collection__item">
+                  <div class="field-hint">Selects each repeating news item on the page.</div>
+                </div>
+                <div>
+                  <label class="field-label">Title</label>
+                  <input type="text" name="sel_title" placeholder="h3 a">
+                  <div class="field-hint">Element whose text becomes the item title.</div>
+                </div>
+                <div>
+                  <label class="field-label">Link</label>
+                  <input type="text" name="sel_link" placeholder="h3 a">
+                  <div class="field-hint">Element whose <code>href</code> becomes the item URL.</div>
+                </div>
+                <div>
+                  <label class="field-label">Summary</label>
+                  <input type="text" name="sel_summary" placeholder="div.description">
+                  <div class="field-hint">Element whose text becomes the summary.</div>
+                </div>
+                <div>
+                  <label class="field-label">Date</label>
+                  <input type="text" name="sel_date" placeholder="time">
+                  <div class="field-hint">Element containing the publication date.</div>
+                </div>
+                <div>
+                  <label class="field-label">Date attribute</label>
+                  <input type="text" name="sel_date_attr" placeholder="datetime">
+                  <div class="field-hint">If the date lives in an HTML attribute (e.g. <code>datetime</code>), name it here.</div>
+                </div>
+                <div class="full">
+                  <label class="field-label">Link prefix</label>
+                  <input type="text" name="sel_link_prefix" placeholder="https://www.sec.gov">
+                  <div class="field-hint">Added in front of relative links like <code>/news/article</code> to make them full URLs.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-ghost" onclick="toggleAddForm()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Add Source</button>
+            </div>
+          </form>
+        </div>
       </div>
 
     </div>
   </div>
 
-  <!-- ── Export / CSV ── -->
+  <!-- ═══ Export ═════════════════════════════════════════════════ -->
   <div class="card">
     <div class="card-header">
-      <span class="card-header-title">Export</span>
-      <span class="card-header-hint">Downloads from the current saved data</span>
+      <div>
+        <div class="card-title">Export</div>
+        <div class="card-subtitle">Download your collected data at any time</div>
+      </div>
     </div>
     <div class="card-body">
       <div class="info-box">
         <strong>The CSV contains all items saved so far</strong> — everything that has passed the keyword filter across
         all pipeline runs. Columns: <em>source, title, url, published, summary, created_at</em>.
         <br><br>
-        <strong>To reset and start fresh:</strong> delete <code>items.json</code> from the project folder, then re-run
-        the pipeline. The next run will fetch everything as if it were the first time.
+        To export only one source, use the <strong>CSV</strong> button next to that source in the table above.
+        <br><br>
+        <strong>To start fresh:</strong> delete <code>items.json</code> from the project folder and re-run the pipeline.
       </div>
-      <div class="csv-row">
-        <div class="csv-description">
-          The pipeline also auto-generates <code>report.xlsx</code> and an HTML site in the <code>site/</code> folder
-          every time it runs.
+      <div class="export-row">
+        <div class="export-desc">
+          The pipeline also auto-generates <code>report.xlsx</code> and an HTML site in the <code>site/</code>
+          folder on every run.
         </div>
-        <a class="btn btn-secondary" href="/download/csv" style="white-space:nowrap;">&#8681; Download CSV</a>
+        <a class="btn btn-primary" href="/download/csv">&#8681; Download All CSV</a>
       </div>
     </div>
   </div>
 
-  <!-- ── Cron log ── -->
+  <!-- ═══ Pipeline Log ════════════════════════════════════════════ -->
   <div class="card">
     <div class="card-header">
-      <span class="card-header-title">Pipeline Log</span>
-      <span class="card-header-hint">
-        {% if pipeline_log %}
-          Last {{ pipeline_log.split('\n') | length }} lines from pipeline.log &nbsp;·&nbsp;
-          <a href="/" style="color:#1F4E79;font-style:normal;">&#8635; Refresh</a>
-        {% else %}
-          No log yet — pipeline hasn't run via cron yet
-        {% endif %}
-      </span>
+      <div>
+        <div class="card-title">Pipeline Log</div>
+        <div class="card-subtitle">
+          {% if pipeline_log %}
+            Last {{ pipeline_log.split('\n') | length }} lines &nbsp;&middot;&nbsp;
+            <a href="/" style="color:#3B82F6;text-decoration:none;">&#8635; Refresh</a>
+          {% else %}
+            No runs recorded yet
+          {% endif %}
+        </div>
+      </div>
     </div>
     <div class="card-body">
       {% if pipeline_log %}
         <pre class="log-block">{{ pipeline_log }}</pre>
       {% else %}
         <div class="info-box">
-          <strong>pipeline.log</strong> will appear here after the cron job runs for the first time
-          (every 4 hours at midnight, 4am, 8am, noon, 4pm, 8pm), or after you click
-          <strong>Run Pipeline</strong> above.
+          <strong>pipeline.log</strong> will appear here after the first pipeline run. Click
+          <strong>Run Pipeline</strong> above, or wait for the automatic run (every 4 hours).
         </div>
       {% endif %}
     </div>
   </div>
 
-  <!-- ── Pipeline output ── -->
+  <!-- ═══ Pipeline Output (after manual run) ══════════════════════ -->
   {% if log is not none %}
   <div class="card">
     <div class="card-header">
-      <span class="card-header-title">Pipeline Output</span>
-      <span class="card-header-hint">Log from the most recent run</span>
+      <div>
+        <div class="card-title">Last Run Output</div>
+        <div class="card-subtitle">Results from the pipeline run you just triggered</div>
+      </div>
     </div>
     <div class="card-body">
-      <div class="info-box" style="margin-bottom:12px;">
-        Each line shows what the pipeline fetched. <strong>New items saved</strong> is the count of items added this
-        run that weren't already in the data file. A count of 0 means all fetched items were already seen before.
+      <div class="info-box" style="margin-bottom:14px;">
+        <strong>New items saved: 0</strong> is normal — it means all fetched items were already captured
+        in a previous run. No duplicates are ever stored.
       </div>
       {% if log_error %}
-        <div class="log-label" style="color:#dc3545;">Error output</div>
-        <pre class="log-block error">{{ log_error }}</pre>
-        {% if log %}
-          <div class="log-label" style="margin-top:12px;">Standard output</div>
-        {% endif %}
+        <div class="log-mini-label err">Error output</div>
+        <pre class="log-block stderr" style="margin-bottom:12px;">{{ log_error }}</pre>
       {% endif %}
       {% if log %}
+        {% if log_error %}<div class="log-mini-label">Standard output</div>{% endif %}
         <pre class="log-block">{{ log }}</pre>
       {% endif %}
     </div>
   </div>
   {% endif %}
 
-</main>
+</div><!-- /.page -->
 
 <script>
+  /* ── Add source form toggle ── */
   function toggleAddForm() {
     var f = document.getElementById('add-form');
     f.style.display = f.style.display === 'none' ? 'block' : 'none';
   }
 
-  function toggleScrapeFields(radio) {
-    var sf = document.getElementById('scrape-fields');
-    sf.style.display = radio.value === 'scrape' ? 'block' : 'none';
+  /* ── Source type toggle ── */
+  function switchType(type) {
+    document.getElementById('scrape-fields').style.display = type === 'scrape' ? 'block' : 'none';
+    document.getElementById('card-rss').classList.toggle('active', type === 'rss');
+    document.getElementById('card-scrape').classList.toggle('active', type === 'scrape');
   }
 
+  /* ── Inline source preview ── */
   async function togglePreview(idx, btn) {
     var row     = document.getElementById('preview-' + idx);
     var content = document.getElementById('preview-content-' + idx);
@@ -706,13 +831,13 @@
       return;
     }
     if (!row.dataset.loaded) {
-      btn.textContent = 'Loading…';
+      btn.textContent = 'Loading\u2026';
       try {
         var resp = await fetch('/source/preview/' + idx);
         content.innerHTML = await resp.text();
         row.dataset.loaded = '1';
       } catch (e) {
-        content.innerHTML = '<span style="color:#dc3545;font-size:.82rem;">Failed to load preview.</span>';
+        content.innerHTML = '<span style="color:#DC2626;font-size:.82rem;">Failed to load preview.</span>';
       }
     }
     row.style.display = '';
