@@ -322,6 +322,40 @@
       color: #546e7a;
       line-height: 1.5;
     }
+
+    /* ── Source preview ── */
+    .preview-row td {
+      padding: 0 !important;
+      border-bottom: 2px solid #1F4E79 !important;
+    }
+    .preview-inner {
+      padding: 12px 16px;
+      background: #f7f9fc;
+    }
+    .btn-preview {
+      background: none;
+      border: 1px solid #1F4E79;
+      color: #1F4E79;
+      font-size: .75rem;
+      padding: 3px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-preview:hover { background: #e8f0f9; }
+    .btn-csv-sm {
+      background: none;
+      border: 1px solid #6c757d;
+      color: #6c757d;
+      font-size: .75rem;
+      padding: 3px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-csv-sm:hover { background: #f0f0f0; }
   </style>
 </head>
 <body>
@@ -460,14 +494,25 @@
                 <span class="badge badge-{{ src.type }}">{{ src.type }}</span>
               </td>
               <td>{{ src.name }}</td>
-              <td style="color:#546e7a;font-size:.8rem;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              <td style="color:#546e7a;font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                 {{ src.url }}
               </td>
-              <td>
-                <form method="post" action="/source/delete/{{ loop.index0 }}"
-                      onsubmit="return confirm('Remove \'{{ src.name }}\'?')">
-                  <button class="btn btn-danger" type="submit">Remove</button>
-                </form>
+              <td style="white-space:nowrap;">
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="btn-preview" onclick="togglePreview({{ loop.index0 }}, this)">Preview</button>
+                  <a class="btn-csv-sm" href="/download/csv/{{ src.name | urlencode }}">&#8681; CSV</a>
+                  <form method="post" action="/source/delete/{{ loop.index0 }}"
+                        onsubmit="return confirm('Remove \'{{ src.name }}\'?')" style="margin:0;">
+                    <button class="btn btn-danger" type="submit">Remove</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <tr class="preview-row" id="preview-{{ loop.index0 }}" style="display:none;">
+              <td colspan="5">
+                <div class="preview-inner" id="preview-content-{{ loop.index0 }}">
+                  <span style="color:#90a4ae;font-size:.82rem;">Loading…</span>
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -650,6 +695,28 @@
   function toggleScrapeFields(radio) {
     var sf = document.getElementById('scrape-fields');
     sf.style.display = radio.value === 'scrape' ? 'block' : 'none';
+  }
+
+  async function togglePreview(idx, btn) {
+    var row     = document.getElementById('preview-' + idx);
+    var content = document.getElementById('preview-content-' + idx);
+    if (row.style.display !== 'none') {
+      row.style.display = 'none';
+      btn.textContent = 'Preview';
+      return;
+    }
+    if (!row.dataset.loaded) {
+      btn.textContent = 'Loading…';
+      try {
+        var resp = await fetch('/source/preview/' + idx);
+        content.innerHTML = await resp.text();
+        row.dataset.loaded = '1';
+      } catch (e) {
+        content.innerHTML = '<span style="color:#dc3545;font-size:.82rem;">Failed to load preview.</span>';
+      }
+    }
+    row.style.display = '';
+    btn.textContent = 'Hide';
   }
 </script>
 

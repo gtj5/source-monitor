@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from flask import Flask, flash, redirect, render_template, request, url_for, Response
+from flask import Flask, flash, redirect, render_template, render_template_string, request, url_for, Response
 
 app = Flask(__name__)
 app.secret_key = "source-monitor-secret"
@@ -42,6 +42,30 @@ def load_config() -> dict:
 def save_config(cfg: dict) -> None:
     with open(CONFIG_FILE, "w") as f:
         yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
+def load_items(source_name: str | None = None) -> list[dict]:
+    cfg = load_config()
+    data_file = Path(__file__).parent / cfg.get("output", {}).get("data_file", "items.json")
+    if not data_file.exists():
+        return []
+    items = json.loads(data_file.read_text()).get("items", [])
+    if source_name:
+        items = [i for i in items if i.get("source") == source_name]
+    return items
+
+
+def make_csv_response(items: list[dict], filename: str) -> Response:
+    fields = ["source", "title", "url", "published", "summary", "created_at"]
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
+    writer.writeheader()
+    writer.writerows(items)
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -123,6 +147,13 @@ def run_pipeline():
         text=True,
         cwd=str(Path(__file__).parent),
     )
+    # Append this run's output to pipeline.log (same as cron does)
+    with open(PIPELINE_LOG, "a") as f:
+        if result.stdout:
+            f.write(result.stdout)
+        if result.stderr:
+            f.write(result.stderr)
+
     cfg = load_config()
     log_error = None
     if result.returncode != 0:
@@ -139,26 +170,64 @@ def run_pipeline():
 
 @app.route("/download/csv")
 def download_csv():
-    cfg = load_config()
-    data_file = Path(__file__).parent / cfg.get("output", {}).get("data_file", "items.json")
-    if not data_file.exists():
-        flash("No data file found. Run the pipeline first.", "error")
+    items = load_items()
+    if not items:
+        flash("No data found. Run the pipeline first.", "error")
         return redirect(url_for("index"))
+    return make_csv_response(items, "source-monitor.csv")
 
-    with open(data_file) as f:
-        items = json.load(f).get("items", [])
 
-    fields = ["source", "title", "url", "published", "summary", "created_at"]
+@app.route("/download/csv/<path:source_name>")
+def download_csv_source(source_name: str):
+    items = load_items(source_name)
+    if not items:
+        flash(f"No data found for '{source_name}'. Run the pipeline first.", "error")
+        return redirect(url_for("index"))
+    filename = source_name.lower().replace(" ", "-") + ".csv"
+    return make_csv_response(items, filename)
 
-    buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
-    writer.writeheader()
-    writer.writerows(items)
 
-    return Response(
-        buf.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=source-monitor.csv"},
+_PREVIEW_TEMPLATE = """
+<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+  <thead>
+    <tr>
+      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Title</th>
+      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Published</th>
+      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #d5dde8;color:#607d8b;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;">Summary</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <a href="{{ item.url }}" target="_blank" style="color:#1F4E79;text-decoration:none;">{{ item.title or '—' }}</a>
+      </td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;white-space:nowrap;color:#607d8b;">{{ item.published or '—' }}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f0f4f8;color:#37474f;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if total > 5 %}
+<p style="font-size:.75rem;color:#90a4ae;margin-top:6px;">Showing 5 of {{ total }} items. Download CSV for full data.</p>
+{% endif %}
+{% if not items %}
+<p style="color:#90a4ae;font-size:.82rem;">No data yet for this source — run the pipeline first.</p>
+{% endif %}
+"""
+
+@app.route("/source/preview/<int:idx>")
+def source_preview(idx: int):
+    cfg = load_config()
+    sources = cfg.get("sources", [])
+    if not 0 <= idx < len(sources):
+        return "<p style='color:#dc3545;font-size:.82rem;'>Invalid source index.</p>", 404
+    source_name = sources[idx]["name"]
+    all_items = load_items(source_name)
+    return render_template_string(
+        _PREVIEW_TEMPLATE,
+        items=all_items[:5],
+        total=len(all_items),
     )
 
 
