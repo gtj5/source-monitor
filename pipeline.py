@@ -16,6 +16,7 @@ from exporters.xlsx import export_xlsx
 from fetchers.rss import fetch_rss
 from fetchers.scraper import fetch_scrape
 from filters import keyword_filter
+from scoring import score_newsworthiness
 from storage import Storage
 
 CONFIG_FILE = Path("config.yaml")
@@ -58,8 +59,11 @@ def run_pipeline():
         all_items = keyword_filter(all_items, keywords)
         print(f"After keyword filter ({', '.join(keywords)}): {len(all_items)}")
 
-    # Deduplicate and persist
+    # Score and deduplicate
     new_items = [i for i in all_items if i["url"] not in existing_urls]
+    for item in new_items:
+        item["newsworthiness_score"] = score_newsworthiness(item)
+        item["user_rating"] = ""
     storage.save(new_items)
     print(f"New items saved: {len(new_items)}")
 

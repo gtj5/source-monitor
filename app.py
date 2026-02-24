@@ -14,6 +14,7 @@ from pathlib import Path
 
 import yaml
 from flask import Flask, flash, redirect, render_template, render_template_string, request, url_for, Response
+from scoring import score_newsworthiness
 
 app = Flask(__name__)
 app.secret_key = "source-monitor-secret"
@@ -56,7 +57,15 @@ def load_items(source_name: str | None = None) -> list[dict]:
 
 
 def make_csv_response(items: list[dict], filename: str) -> Response:
-    fields = ["source", "title", "url", "published", "summary", "created_at"]
+    # Backfill score for any items saved before scoring was added
+    for item in items:
+        if "newsworthiness_score" not in item:
+            item["newsworthiness_score"] = score_newsworthiness(item)
+        if "user_rating" not in item:
+            item["user_rating"] = ""
+
+    fields = ["source", "title", "url", "published", "summary",
+              "newsworthiness_score", "user_rating", "created_at"]
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
     writer.writeheader()
@@ -187,11 +196,20 @@ def download_csv_source(source_name: str):
     return make_csv_response(items, filename)
 
 
+_SCORE_COLORS = {
+    5: ("#FEF2F2", "#DC2626", "5 — Break"),
+    4: ("#FFF7ED", "#EA580C", "4 — High"),
+    3: ("#FEFCE8", "#CA8A04", "3 — Moderate"),
+    2: ("#F0FDF4", "#16A34A", "2 — Low"),
+    1: ("#F8FAFC", "#94A3B8", "1 — Routine"),
+}
+
 _PREVIEW_TEMPLATE = """
 {% if items %}
 <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
   <thead>
     <tr>
+      <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Score</th>
       <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Title</th>
       <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Published</th>
       <th style="text-align:left;padding:4px 10px 8px;border-bottom:1px solid #E2E8F0;color:#94A3B8;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;">Summary</th>
@@ -199,12 +217,17 @@ _PREVIEW_TEMPLATE = """
   </thead>
   <tbody>
     {% for item in items %}
+    {% set score = item.get('newsworthiness_score') or score_fn(item) %}
+    {% set colors = score_colors.get(score, score_colors[1]) %}
     <tr>
-      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;white-space:nowrap;">
+        <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;background:{{ colors[0] }};color:{{ colors[1] }};">{{ colors[2] }}</span>
+      </td>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
         <a href="{{ item.url }}" target="_blank" style="color:#1D4ED8;text-decoration:none;font-weight:600;">{{ item.title or '—' }}</a>
       </td>
       <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;white-space:nowrap;color:#94A3B8;">{{ item.published or '—' }}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;color:#475569;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;color:#475569;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -229,6 +252,8 @@ def source_preview(idx: int):
         _PREVIEW_TEMPLATE,
         items=all_items[:5],
         total=len(all_items),
+        score_colors=_SCORE_COLORS,
+        score_fn=score_newsworthiness,
     )
 
 
