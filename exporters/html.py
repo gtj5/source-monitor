@@ -8,6 +8,15 @@ import html as html_lib
 from datetime import datetime, timezone
 from pathlib import Path
 
+from bs4 import BeautifulSoup
+
+
+def _plain(text: str) -> str:
+    """Strip HTML tags from an RSS summary so the rendered page shows clean text."""
+    if not text:
+        return ""
+    return BeautifulSoup(text, "html.parser").get_text(" ", strip=True)
+
 _PAGE = """\
 <!DOCTYPE html>
 <html lang="en">
@@ -114,7 +123,7 @@ def export_html(items: list[dict], output_dir: str):
             url=html_lib.escape(item.get("url", "#")),
             title=html_lib.escape(item.get("title", "(no title)")),
             published=html_lib.escape(item.get("published", "")),
-            summary=html_lib.escape(item.get("summary", "")),
+            summary=html_lib.escape(_plain(item.get("summary", ""))),
         )
         for item in items
     )

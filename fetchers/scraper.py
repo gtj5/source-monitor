@@ -14,6 +14,7 @@ Selector config keys (all optional except `items`):
 """
 
 from datetime import datetime, timezone
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -75,7 +76,10 @@ def _link(card, selector: str | None, prefix: str) -> str:
     if not tag:
         return ""
     href = tag.get("href", "")
-    return (prefix + href) if href.startswith("/") else href
+    if not href:
+        return ""
+    # urljoin handles absolute URLs, "/rooted" paths, and "relative/paths".
+    return urljoin(prefix or "", href)
 
 
 def _date(card, selector: str | None, attr: str | None) -> str:

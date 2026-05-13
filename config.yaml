@@ -16,6 +16,9 @@ sources:
     summary: div.usa-collection__description
     date: time
     date_attr: datetime
+- name: 404 Media
+  type: rss
+  url: https://404.feed.press/private?key=${MEDIA_404_KEY}
 keywords: []
 output:
   json: true

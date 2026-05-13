@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .env
 items.json
+pipeline.log
 report.xlsx
 site/
 *.egg-info/
