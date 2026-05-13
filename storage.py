@@ -1,11 +1,11 @@
 """
 storage.py
 
-JSON-based item storage with deduplication by URL.
+JSON-based item storage. Callers load once, mutate the in-memory dict,
+and write only when something actually changed.
 """
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -19,14 +19,7 @@ class Storage:
                 return json.load(f)
         return {"items": [], "last_updated": None}
 
-    def existing_urls(self) -> set:
-        return {item["url"] for item in self.load()["items"]}
-
-    def save(self, new_items: list[dict]):
-        """Prepend new_items to stored items (newest first) and write to disk."""
-        data = self.load()
-        for item in reversed(new_items):   # preserve fetch order when inserting at front
-            data["items"].insert(0, item)
-        data["last_updated"] = datetime.now(timezone.utc).isoformat()
+    def write(self, data: dict) -> None:
+        """Dump the full data dict to disk. Caller decides when to write."""
         with open(self.path, "w") as f:
             json.dump(data, f, indent=2)

@@ -16,6 +16,9 @@ Scale:
   1 — Routine / administrative
 """
 
+# Tiers are checked top-down: a keyword in TIER5 wins even if it also appears
+# later, so each keyword is listed exactly once at its strongest tier.
+
 # ── Tier 5: Urgent, break-worthy ─────────────────────────────────────────────
 # Public safety, major crimes, disasters, systemic failures
 _TIER5 = [
@@ -24,7 +27,7 @@ _TIER5 = [
     "convicted", "conviction", "prison", "jail", "criminal",
     "fraud", "wire fraud", "money laundering", "bribery", "corruption",
     "insider trading", "market manipulation", "ponzi", "pump and dump",
-    "whistleblower exposes", "leaked", "cover-up",
+    "whistleblower exposes", "leaked",
 
     # Public safety & disasters
     "dead", "deaths", "killed", "casualties", "fatalities", "mass shooting",
@@ -33,7 +36,7 @@ _TIER5 = [
     "hack", "breach", "cyberattack", "data breach", "ransomware",
 
     # Systemic/government
-    "scandal", "corruption", "impeach", "resign under", "fired",
+    "scandal", "impeach", "resign under", "fired",
     "cover up", "cover-up", "suppressed", "concealed",
 ]
 
@@ -44,11 +47,11 @@ _TIER4 = [
     "lawsuit", "sued", "sues", "litigation", "enforcement",
     "penalty", "penalties", "fine", "fined", "settlement", "settled",
     "investigation", "probe", "subpoena", "injunction", "ban", "banned",
-    "sanction", "sanctions", "violation", "misconduct", "misconduct",
+    "sanction", "sanctions", "violation", "misconduct",
     "disgorgement", "restitution", "damages",
 
     # Accountability & impact
-    "layoffs", "job cuts", "bankruptcy", "bankrupt", "collapse",
+    "layoffs", "job cuts", "bankruptcy", "bankrupt",
     "data exposed", "privacy violation", "surveillance", "spying",
     "monopoly", "antitrust", "price fixing", "exploitation",
     "whistleblower", "leak", "internal documents", "exclusive",

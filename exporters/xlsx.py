@@ -11,11 +11,15 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-COLUMNS = ["source", "title", "published", "url", "summary"]
+COLUMNS = ["source", "title", "published", "url", "summary",
+           "newsworthiness_score", "user_rating"]
 
 _HEADER_FILL = PatternFill("solid", fgColor="1F4E79")
 _HEADER_FONT = Font(color="FFFFFF", bold=True)
-_COL_WIDTHS  = {"source": 22, "title": 55, "published": 22, "url": 40, "summary": 65}
+_COL_WIDTHS  = {
+    "source": 22, "title": 55, "published": 22, "url": 40, "summary": 65,
+    "newsworthiness_score": 10, "user_rating": 10,
+}
 
 
 def export_xlsx(items: list[dict], path: str):
@@ -23,9 +27,11 @@ def export_xlsx(items: list[dict], path: str):
     ws = wb.active
     ws.title = "Items"
 
+    _NUMERIC = {"newsworthiness_score", "user_rating"}
+
     # Header row
     for col_idx, col_name in enumerate(COLUMNS, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=col_name.upper())
+        cell = ws.cell(row=1, column=col_idx, value=col_name.replace("_", " ").upper())
         cell.fill = _HEADER_FILL
         cell.font = _HEADER_FONT
         cell.alignment = Alignment(horizontal="center")
@@ -38,7 +44,10 @@ def export_xlsx(items: list[dict], path: str):
             if col_name == "url" and value:
                 cell.hyperlink = value
                 cell.style = "Hyperlink"
-            cell.alignment = Alignment(wrap_text=True, vertical="top")
+            if col_name in _NUMERIC:
+                cell.alignment = Alignment(horizontal="center", vertical="top")
+            else:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
 
     # Column widths + freeze header
     for col_idx, col_name in enumerate(COLUMNS, start=1):

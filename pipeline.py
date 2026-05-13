@@ -7,9 +7,12 @@ Reads config.yaml, fetches each source, applies keyword filter, and exports.
 Run:  python pipeline.py
 """
 
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 
 from exporters.html import export_html
 from exporters.xlsx import export_xlsx
@@ -19,12 +22,20 @@ from filters import keyword_filter
 from scoring import score_newsworthiness
 from storage import Storage
 
-CONFIG_FILE = Path("config.yaml")
+CONFIG_FILE = Path(__file__).parent / "config.yaml"
 
 
 def load_config() -> dict:
+    """Load config.yaml and expand ${VAR} references against the environment."""
+    load_dotenv(Path(__file__).parent / ".env")
     with open(CONFIG_FILE) as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f) or {}
+
+    # Expand ${VAR} in source URLs so secrets stay in .env, not in the repo.
+    for source in cfg.get("sources", []):
+        if isinstance(source.get("url"), str):
+            source["url"] = os.path.expandvars(source["url"])
+    return cfg
 
 
 def run_pipeline():
@@ -35,8 +46,19 @@ def run_pipeline():
     keywords = config.get("keywords", [])
     output   = config.get("output", {})
 
-    storage      = Storage(output.get("data_file", "items.json"))
-    existing_urls = storage.existing_urls()
+    storage = Storage(output.get("data_file", "items.json"))
+    data    = storage.load()
+    existing_urls = {item["url"] for item in data["items"]}
+
+    # Backfill scores/ratings on items saved before scoring was introduced.
+    backfilled = 0
+    for item in data["items"]:
+        if "newsworthiness_score" not in item:
+            item["newsworthiness_score"] = score_newsworthiness(item)
+            backfilled += 1
+        item.setdefault("user_rating", "")
+    if backfilled:
+        print(f"Backfilled score on {backfilled} existing items.")
 
     # Fetch from all sources
     all_items = []
@@ -64,16 +86,20 @@ def run_pipeline():
     for item in new_items:
         item["newsworthiness_score"] = score_newsworthiness(item)
         item["user_rating"] = ""
-    storage.save(new_items)
+
+    # Persist only if the stored data actually changed.
+    if new_items or backfilled:
+        data["items"] = new_items + data["items"]
+        data["last_updated"] = datetime.now(timezone.utc).isoformat()
+        storage.write(data)
     print(f"New items saved: {len(new_items)}")
 
-    # Export
-    all_stored = storage.load()["items"]
+    # Export from the in-memory snapshot — no extra disk read.
     print()
     if output.get("xlsx"):
-        export_xlsx(all_stored, output.get("xlsx_file", "report.xlsx"))
+        export_xlsx(data["items"], output.get("xlsx_file", "report.xlsx"))
     if output.get("html"):
-        export_html(all_stored, output.get("html_dir", "site"))
+        export_html(data["items"], output.get("html_dir", "site"))
 
     print("\n=== Done ===\n")
 

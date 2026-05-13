@@ -45,8 +45,9 @@ def save_config(cfg: dict) -> None:
         yaml.dump(cfg, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
-def load_items(source_name: str | None = None) -> list[dict]:
-    cfg = load_config()
+def load_items(source_name: str | None = None, cfg: dict | None = None) -> list[dict]:
+    if cfg is None:
+        cfg = load_config()
     data_file = Path(__file__).parent / cfg.get("output", {}).get("data_file", "items.json")
     if not data_file.exists():
         return []
@@ -56,20 +57,21 @@ def load_items(source_name: str | None = None) -> list[dict]:
     return items
 
 
-def make_csv_response(items: list[dict], filename: str) -> Response:
-    # Backfill score for any items saved before scoring was added
-    for item in items:
-        if "newsworthiness_score" not in item:
-            item["newsworthiness_score"] = score_newsworthiness(item)
-        if "user_rating" not in item:
-            item["user_rating"] = ""
+def _row_with_score(item: dict) -> dict:
+    """Return a shallow copy of `item` with score/rating filled in (no mutation)."""
+    row = dict(item)
+    row.setdefault("newsworthiness_score", score_newsworthiness(item))
+    row.setdefault("user_rating", "")
+    return row
 
+
+def make_csv_response(items: list[dict], filename: str) -> Response:
     fields = ["source", "title", "url", "published", "summary",
               "newsworthiness_score", "user_rating", "created_at"]
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
     writer.writeheader()
-    writer.writerows(items)
+    writer.writerows(_row_with_score(i) for i in items)
     return Response(
         buf.getvalue(),
         mimetype="text/csv",
@@ -147,31 +149,42 @@ def source_delete(idx: int):
     return redirect(url_for("index"))
 
 
+PIPELINE_TIMEOUT = 180  # seconds — caps the worst case if a feed hangs
+
+
 @app.route("/run", methods=["POST"])
 def run_pipeline():
     pipeline = Path(__file__).parent / "pipeline.py"
-    result = subprocess.run(
-        [sys.executable, str(pipeline)],
-        capture_output=True,
-        text=True,
-        cwd=str(Path(__file__).parent),
-    )
+    stdout = ""
+    log_error = None
+    try:
+        result = subprocess.run(
+            [sys.executable, str(pipeline)],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).parent),
+            timeout=PIPELINE_TIMEOUT,
+        )
+        stdout = result.stdout
+        if result.returncode != 0:
+            log_error = result.stderr or "(no stderr)"
+    except subprocess.TimeoutExpired as e:
+        stdout    = (e.stdout or "") if isinstance(e.stdout, str) else ""
+        log_error = f"Pipeline timed out after {PIPELINE_TIMEOUT}s and was killed."
+
     # Append this run's output to pipeline.log (same as cron does)
     with open(PIPELINE_LOG, "a") as f:
-        if result.stdout:
-            f.write(result.stdout)
-        if result.stderr:
-            f.write(result.stderr)
+        if stdout:
+            f.write(stdout)
+        if log_error:
+            f.write(log_error)
 
     cfg = load_config()
-    log_error = None
-    if result.returncode != 0:
-        log_error = result.stderr or "(no stderr)"
     return render_template(
         "index.html",
         sources=cfg.get("sources", []),
         keywords=cfg.get("keywords", []),
-        log=result.stdout or "(no output)",
+        log=stdout or "(no output)",
         log_error=log_error,
         pipeline_log=read_pipeline_log(),
     )
@@ -247,7 +260,7 @@ def source_preview(idx: int):
     if not 0 <= idx < len(sources):
         return "<p style='color:#dc3545;font-size:.82rem;'>Invalid source index.</p>", 404
     source_name = sources[idx]["name"]
-    all_items = load_items(source_name)
+    all_items = load_items(source_name, cfg=cfg)
     return render_template_string(
         _PREVIEW_TEMPLATE,
         items=all_items[:5],
