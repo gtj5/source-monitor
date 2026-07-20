@@ -32,11 +32,9 @@ class ScoringTests(unittest.TestCase):
         scoring._client = None
         try:
             result = scoring.analyze_item("SEC charges firm with fraud", "")
-            self.assertIsNone(result["score"])
-            self.assertEqual(result["reason"], "")
-            self.assertEqual(result["summary"], "")
-            # score_newsworthiness always returns an int for UI callers.
-            self.assertEqual(scoring.score_newsworthiness({"title": "x"}), 1)
+            self.assertEqual(
+                result, {"score": None, "reason": "", "summary": ""}
+            )
         finally:
             if saved is not None:
                 os.environ["ANTHROPIC_API_KEY"] = saved

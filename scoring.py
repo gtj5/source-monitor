@@ -103,12 +103,3 @@ def analyze_item(title: str, summary: str = "") -> dict:
     except Exception as e:
         print(f"    ! analysis failed: {e}")
         return {"score": None, "reason": "", "summary": ""}
-
-
-def score_newsworthiness(item: dict) -> int:
-    """
-    Backward-compatible helper used by the web UI: return just the 1–5 score
-    for an item. Falls back to 1 when the AI is unavailable so callers that
-    expect an int always get one.
-    """
-    return analyze_item(item.get("title", ""), item.get("summary", ""))["score"] or 1

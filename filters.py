@@ -10,10 +10,9 @@ def keyword_filter(items: list[dict], keywords: list[str]) -> list[dict]:
     if not keywords:
         return items
     lower_kws = [k.lower() for k in keywords]
-    return [
-        item for item in items
-        if any(
-            kw in (item.get("title", "") + " " + item.get("summary", "")).lower()
-            for kw in lower_kws
-        )
-    ]
+    kept = []
+    for item in items:
+        haystack = f"{item.get('title', '')} {item.get('summary', '')}".lower()
+        if any(kw in haystack for kw in lower_kws):
+            kept.append(item)
+    return kept

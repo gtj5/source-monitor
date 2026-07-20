@@ -24,6 +24,14 @@ from storage import Storage
 CONFIG_FILE = Path(__file__).parent / "config.yaml"
 
 
+def attach_analysis(item: dict) -> None:
+    """Score + summarize an item in place, adding the three AI fields."""
+    result = analyze_item(item.get("title", ""), item.get("summary", ""))
+    item["newsworthiness_score"] = result["score"]
+    item["score_reason"]         = result["reason"]
+    item["ai_summary"]           = result["summary"]
+
+
 def load_config() -> dict:
     """Load config.yaml and expand ${VAR} references against the environment."""
     load_dotenv(Path(__file__).parent / ".env")
@@ -53,10 +61,7 @@ def run_pipeline():
     backfilled = 0
     for item in data["items"]:
         if "newsworthiness_score" not in item:
-            result = analyze_item(item.get("title", ""), item.get("summary", ""))
-            item["newsworthiness_score"] = result["score"]
-            item["score_reason"]         = result["reason"]
-            item["ai_summary"]           = result["summary"]
+            attach_analysis(item)
             backfilled += 1
         item.setdefault("user_rating", "")
         item.setdefault("score_reason", "")
@@ -86,11 +91,8 @@ def run_pipeline():
     # Deduplicate, then score + summarize each new item with the AI analyzer.
     new_items = [i for i in all_items if i["url"] not in existing_urls]
     for item in new_items:
-        result = analyze_item(item.get("title", ""), item.get("summary", ""))
-        item["newsworthiness_score"] = result["score"]
-        item["score_reason"]         = result["reason"]
-        item["ai_summary"]           = result["summary"]
-        item["user_rating"]          = ""
+        attach_analysis(item)
+        item["user_rating"] = ""
 
     # Persist only if the stored data actually changed.
     if new_items or backfilled:

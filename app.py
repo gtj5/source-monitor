@@ -10,11 +10,11 @@ import io
 import json
 import subprocess
 import sys
+from collections import deque
 from pathlib import Path
 
 import yaml
 from flask import Flask, flash, redirect, render_template, render_template_string, request, url_for, Response
-from scoring import score_newsworthiness
 
 app = Flask(__name__)
 app.secret_key = "source-monitor-secret"
@@ -27,8 +27,9 @@ LOG_TAIL     = 200  # max lines to show in the UI
 def read_pipeline_log() -> str | None:
     if not PIPELINE_LOG.exists():
         return None
-    lines = PIPELINE_LOG.read_text().splitlines()
-    return "\n".join(lines[-LOG_TAIL:])
+    # Tail the file without loading the whole thing into memory.
+    with open(PIPELINE_LOG) as f:
+        return "".join(deque(f, maxlen=LOG_TAIL)).rstrip("\n")
 
 
 # ---------------------------------------------------------------------------
@@ -57,21 +58,15 @@ def load_items(source_name: str | None = None, cfg: dict | None = None) -> list[
     return items
 
 
-def _row_with_score(item: dict) -> dict:
-    """Return a shallow copy of `item` with score/rating filled in (no mutation)."""
-    row = dict(item)
-    row.setdefault("newsworthiness_score", score_newsworthiness(item))
-    row.setdefault("user_rating", "")
-    return row
-
-
 def make_csv_response(items: list[dict], filename: str) -> Response:
+    # DictWriter blanks any field an item is missing, so stored scores/summaries
+    # flow straight through — no per-request scoring needed.
     fields = ["source", "title", "url", "published", "summary", "ai_summary",
               "newsworthiness_score", "score_reason", "user_rating", "created_at"]
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
     writer.writeheader()
-    writer.writerows(_row_with_score(i) for i in items)
+    writer.writerows(items)
     return Response(
         buf.getvalue(),
         mimetype="text/csv",
@@ -221,11 +216,15 @@ _PREVIEW_TEMPLATE = """
   </thead>
   <tbody>
     {% for item in items %}
-    {% set score = item.get('newsworthiness_score') or score_fn(item) %}
-    {% set colors = score_colors.get(score, score_colors[1]) %}
+    {% set score = item.get('newsworthiness_score') %}
     <tr>
       <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;white-space:nowrap;">
+        {% if score %}
+        {% set colors = score_colors.get(score, score_colors[1]) %}
         <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;background:{{ colors[0] }};color:{{ colors[1] }};">{{ colors[2] }}</span>
+        {% else %}
+        <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;background:#F1F5F9;color:#94A3B8;">—</span>
+        {% endif %}
       </td>
       <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
         <a href="{{ item.url }}" target="_blank" style="color:#1D4ED8;text-decoration:none;font-weight:600;">{{ item.title or '—' }}</a>
@@ -257,7 +256,6 @@ def source_preview(idx: int):
         items=all_items[:5],
         total=len(all_items),
         score_colors=_SCORE_COLORS,
-        score_fn=score_newsworthiness,
     )
 
 

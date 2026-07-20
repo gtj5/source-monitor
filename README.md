@@ -168,6 +168,11 @@ scale for your beat. Scoring requires an `ANTHROPIC_API_KEY` (see
 `.env.example`); without one the pipeline still runs but leaves the three
 fields above blank. The call degrades gracefully and never aborts a run.
 
+Each item is analyzed **once**, during the pipeline run that first sees it
+(`pipeline.py`'s `attach_analysis`). The web UI and every export just read the
+stored fields back — they never call the API — so previews and CSV downloads
+stay instant and free.
+
 The `user_rating` column is a manual override slot: the pipeline never
 writes to it after creating an item, so it's safe for you to fill in via the
 CSV/XLSX exports.
