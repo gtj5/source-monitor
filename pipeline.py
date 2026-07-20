@@ -17,9 +17,8 @@ from dotenv import load_dotenv
 from exporters.html import export_html
 from exporters.xlsx import export_xlsx
 from fetchers.rss import fetch_rss
-from fetchers.scraper import fetch_scrape
 from filters import keyword_filter
-from scoring import score_newsworthiness
+from scoring import analyze_item
 from storage import Storage
 
 CONFIG_FILE = Path(__file__).parent / "config.yaml"
@@ -50,15 +49,20 @@ def run_pipeline():
     data    = storage.load()
     existing_urls = {item["url"] for item in data["items"]}
 
-    # Backfill scores/ratings on items saved before scoring was introduced.
+    # Backfill AI score/summary on items saved before AI analysis was introduced.
     backfilled = 0
     for item in data["items"]:
         if "newsworthiness_score" not in item:
-            item["newsworthiness_score"] = score_newsworthiness(item)
+            result = analyze_item(item.get("title", ""), item.get("summary", ""))
+            item["newsworthiness_score"] = result["score"]
+            item["score_reason"]         = result["reason"]
+            item["ai_summary"]           = result["summary"]
             backfilled += 1
         item.setdefault("user_rating", "")
+        item.setdefault("score_reason", "")
+        item.setdefault("ai_summary", "")
     if backfilled:
-        print(f"Backfilled score on {backfilled} existing items.")
+        print(f"Backfilled AI score + summary on {backfilled} existing items.")
 
     # Fetch from all sources
     all_items = []
@@ -67,10 +71,8 @@ def run_pipeline():
         src_type = source.get("type")
         if src_type == "rss":
             items = fetch_rss(source)
-        elif src_type == "scrape":
-            items = fetch_scrape(source)
         else:
-            print(f"  Unknown type '{src_type}', skipping.")
+            print(f"  Unsupported type '{src_type}' (RSS only), skipping.")
             continue
         all_items.extend(items)
 
@@ -81,11 +83,14 @@ def run_pipeline():
         all_items = keyword_filter(all_items, keywords)
         print(f"After keyword filter ({', '.join(keywords)}): {len(all_items)}")
 
-    # Score and deduplicate
+    # Deduplicate, then score + summarize each new item with the AI analyzer.
     new_items = [i for i in all_items if i["url"] not in existing_urls]
     for item in new_items:
-        item["newsworthiness_score"] = score_newsworthiness(item)
-        item["user_rating"] = ""
+        result = analyze_item(item.get("title", ""), item.get("summary", ""))
+        item["newsworthiness_score"] = result["score"]
+        item["score_reason"]         = result["reason"]
+        item["ai_summary"]           = result["summary"]
+        item["user_rating"]          = ""
 
     # Persist only if the stored data actually changed.
     if new_items or backfilled:

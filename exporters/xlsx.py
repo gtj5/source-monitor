@@ -11,14 +11,15 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-COLUMNS = ["source", "title", "published", "url", "summary",
-           "newsworthiness_score", "user_rating"]
+COLUMNS = ["source", "title", "published", "url", "summary", "ai_summary",
+           "newsworthiness_score", "score_reason", "user_rating"]
 
 _HEADER_FILL = PatternFill("solid", fgColor="1F4E79")
 _HEADER_FONT = Font(color="FFFFFF", bold=True)
 _COL_WIDTHS  = {
     "source": 22, "title": 55, "published": 22, "url": 40, "summary": 65,
-    "newsworthiness_score": 10, "user_rating": 10,
+    "ai_summary": 65, "newsworthiness_score": 10, "score_reason": 45,
+    "user_rating": 10,
 }
 
 

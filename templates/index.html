@@ -569,11 +569,8 @@
     <div class="card-body">
 
       <div class="info-box">
-        <strong>Sources</strong> are the feeds and pages the pipeline fetches from. Two types:
-        <ul>
-          <li><strong>RSS</strong> — paste the feed URL; items are parsed automatically.</li>
-          <li><strong>Scrape</strong> — paste a web page URL, then provide CSS selectors to tell the tool where titles, links, and dates are on the page.</li>
-        </ul>
+        <strong>Sources</strong> are the RSS/Atom feeds the pipeline fetches from — paste a
+        feed URL and items are parsed automatically.
         Items are <strong>deduplicated by URL</strong> — running the pipeline multiple times won't create duplicates.
       </div>
 
@@ -645,72 +642,8 @@
               </div>
               <div>
                 <label class="field-label">URL</label>
-                <input type="text" name="url" placeholder="https://…" required>
-                <div class="field-hint">The RSS feed URL, or the web page URL you want to scrape.</div>
-              </div>
-              <div class="full">
-                <label class="field-label">Source Type</label>
-                <div class="type-cards">
-                  <label class="type-card active" id="card-rss">
-                    <input type="radio" name="type" value="rss" checked onchange="switchType('rss')">
-                    <div>
-                      <div class="type-card-label">RSS Feed</div>
-                      <div class="type-card-desc">Standard news feed — paste the URL and you're done. No extra setup needed.</div>
-                    </div>
-                  </label>
-                  <label class="type-card" id="card-scrape">
-                    <input type="radio" name="type" value="scrape" onchange="switchType('scrape')">
-                    <div>
-                      <div class="type-card-label">Web Page (Scrape)</div>
-                      <div class="type-card-desc">For pages without a feed. You'll need to provide CSS selectors to locate items on the page.</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div id="scrape-fields" class="scrape-section" style="display:none;">
-              <div class="scrape-section-label">CSS Selectors &mdash; where to find each field on the page</div>
-              <div class="warn-box">
-                Open the target page in your browser, right-click an item, and choose <strong>Inspect</strong>
-                to find the right CSS selectors. Only <strong>Items selector</strong> is required.
-              </div>
-              <div class="form-grid">
-                <div>
-                  <label class="field-label">Items selector <span style="color:#DC2626;">*</span></label>
-                  <input type="text" name="sel_items" placeholder="li.collection__item">
-                  <div class="field-hint">Selects each repeating news item on the page.</div>
-                </div>
-                <div>
-                  <label class="field-label">Title</label>
-                  <input type="text" name="sel_title" placeholder="h3 a">
-                  <div class="field-hint">Element whose text becomes the item title.</div>
-                </div>
-                <div>
-                  <label class="field-label">Link</label>
-                  <input type="text" name="sel_link" placeholder="h3 a">
-                  <div class="field-hint">Element whose <code>href</code> becomes the item URL.</div>
-                </div>
-                <div>
-                  <label class="field-label">Summary</label>
-                  <input type="text" name="sel_summary" placeholder="div.description">
-                  <div class="field-hint">Element whose text becomes the summary.</div>
-                </div>
-                <div>
-                  <label class="field-label">Date</label>
-                  <input type="text" name="sel_date" placeholder="time">
-                  <div class="field-hint">Element containing the publication date.</div>
-                </div>
-                <div>
-                  <label class="field-label">Date attribute</label>
-                  <input type="text" name="sel_date_attr" placeholder="datetime">
-                  <div class="field-hint">If the date lives in an HTML attribute (e.g. <code>datetime</code>), name it here.</div>
-                </div>
-                <div class="full">
-                  <label class="field-label">Link prefix</label>
-                  <input type="text" name="sel_link_prefix" placeholder="https://www.sec.gov">
-                  <div class="field-hint">Added in front of relative links like <code>/news/article</code> to make them full URLs.</div>
-                </div>
+                <input type="text" name="url" placeholder="https://…/feed.rss" required>
+                <div class="field-hint">The RSS or Atom feed URL.</div>
               </div>
             </div>
 
@@ -812,13 +745,6 @@
   function toggleAddForm() {
     var f = document.getElementById('add-form');
     f.style.display = f.style.display === 'none' ? 'block' : 'none';
-  }
-
-  /* ── Source type toggle ── */
-  function switchType(type) {
-    document.getElementById('scrape-fields').style.display = type === 'scrape' ? 'block' : 'none';
-    document.getElementById('card-rss').classList.toggle('active', type === 'rss');
-    document.getElementById('card-scrape').classList.toggle('active', type === 'scrape');
   }
 
   /* ── Inline source preview ── */

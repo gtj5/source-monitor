@@ -66,8 +66,8 @@ def _row_with_score(item: dict) -> dict:
 
 
 def make_csv_response(items: list[dict], filename: str) -> Response:
-    fields = ["source", "title", "url", "published", "summary",
-              "newsworthiness_score", "user_rating", "created_at"]
+    fields = ["source", "title", "url", "published", "summary", "ai_summary",
+              "newsworthiness_score", "score_reason", "user_rating", "created_at"]
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore", lineterminator="\r\n")
     writer.writeheader()
@@ -109,7 +109,6 @@ def keywords_save():
 
 @app.route("/source/add", methods=["POST"])
 def source_add():
-    src_type = request.form.get("type", "rss")
     name = request.form.get("name", "").strip()
     url = request.form.get("url", "").strip()
 
@@ -117,16 +116,8 @@ def source_add():
         flash("Name and URL are required.", "error")
         return redirect(url_for("index"))
 
-    source: dict = {"name": name, "type": src_type, "url": url}
-
-    if src_type == "scrape":
-        selectors: dict = {}
-        for field in ("items", "title", "link", "summary", "date", "date_attr", "link_prefix"):
-            val = request.form.get(f"sel_{field}", "").strip()
-            if val:
-                selectors[field] = val
-        if selectors:
-            source["selectors"] = selectors
+    # RSS/Atom feeds only — the HTML scraper was removed.
+    source: dict = {"name": name, "type": "rss", "url": url}
 
     cfg = load_config()
     cfg.setdefault("sources", []).append(source)
@@ -240,7 +231,7 @@ _PREVIEW_TEMPLATE = """
         <a href="{{ item.url }}" target="_blank" style="color:#1D4ED8;text-decoration:none;font-weight:600;">{{ item.title or '—' }}</a>
       </td>
       <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;white-space:nowrap;color:#94A3B8;">{{ item.published or '—' }}</td>
-      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;color:#475569;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.summary or '—' }}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #F8FAFC;color:#475569;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.ai_summary or item.summary or '—' }}</td>
     </tr>
     {% endfor %}
   </tbody>

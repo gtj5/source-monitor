@@ -5,17 +5,6 @@ sources:
 - name: SEC Litigation Releases
   type: rss
   url: https://www.sec.gov/enforcement-litigation/litigation-releases/rss
-- name: SEC Open Meetings
-  type: scrape
-  url: https://www.sec.gov/news/upcoming-events
-  selectors:
-    items: li.usa-collection__item
-    title: h3.usa-collection__heading a
-    link: h3.usa-collection__heading a
-    link_prefix: https://www.sec.gov
-    summary: div.usa-collection__description
-    date: time
-    date_attr: datetime
 - name: 404 Media
   type: rss
   url: https://404.feed.press/private?key=${MEDIA_404_KEY}

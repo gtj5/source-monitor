@@ -123,7 +123,7 @@ def export_html(items: list[dict], output_dir: str):
             url=html_lib.escape(item.get("url", "#")),
             title=html_lib.escape(item.get("title", "(no title)")),
             published=html_lib.escape(item.get("published", "")),
-            summary=html_lib.escape(_plain(item.get("summary", ""))),
+            summary=html_lib.escape(_plain(item.get("ai_summary") or item.get("summary", ""))),
         )
         for item in items
     )

@@ -1,107 +1,114 @@
 """
 scoring.py
 
-Keyword-based newsworthiness scorer for pipeline items.
-Built for general journalism — works across any topic or beat.
+AI-based newsworthiness scorer and summarizer for pipeline items.
+
+Uses Claude Haiku to rate each item 1–5 for newsworthiness AND generate a
+concise plain-English summary — both in a single API call to keep cost and
+latency down.
+
+Degrades gracefully: if ANTHROPIC_API_KEY is unset or the call fails for any
+reason, it returns a null score and empty text instead of raising, so the
+pipeline and web UI keep working without an API key.
 
 Scale:
-  5 — Break / publish immediately or investigate urgently
-      (public safety, major crimes, disasters, major scandals)
+  5 — Break immediately / investigate urgently
+      (public safety, major crimes, disasters, systemic scandals)
   4 — High public interest
-      (significant legal action, corporate misconduct, major policy impact)
+      (major legal action, corporate misconduct, significant policy impact)
   3 — Moderate interest
-      (regulation, tech developments, notable business/political activity)
+      (regulation, notable tech / business / political developments)
   2 — Lower interest
       (personnel changes, scheduled events, routine reports)
   1 — Routine / administrative
 """
 
-# Tiers are checked top-down: a keyword in TIER5 wins even if it also appears
-# later, so each keyword is listed exactly once at its strongest tier.
+import json
+import os
 
-# ── Tier 5: Urgent, break-worthy ─────────────────────────────────────────────
-# Public safety, major crimes, disasters, systemic failures
-_TIER5 = [
-    # Crimes & legal
-    "arrest", "arrested", "indicted", "indictment", "charged", "charges",
-    "convicted", "conviction", "prison", "jail", "criminal",
-    "fraud", "wire fraud", "money laundering", "bribery", "corruption",
-    "insider trading", "market manipulation", "ponzi", "pump and dump",
-    "whistleblower exposes", "leaked",
+import anthropic
+from dotenv import load_dotenv
 
-    # Public safety & disasters
-    "dead", "deaths", "killed", "casualties", "fatalities", "mass shooting",
-    "explosion", "collapse", "disaster", "emergency", "outbreak",
-    "recall", "safety alert", "health warning", "contamination",
-    "hack", "breach", "cyberattack", "data breach", "ransomware",
+load_dotenv()
 
-    # Systemic/government
-    "scandal", "impeach", "resign under", "fired",
-    "cover up", "cover-up", "suppressed", "concealed",
-]
+_MODEL = "claude-haiku-4-5-20251001"
 
-# ── Tier 4: High public interest ─────────────────────────────────────────────
-# Legal actions, corporate misconduct, significant accountability
-_TIER4 = [
-    # Legal & regulatory action
-    "lawsuit", "sued", "sues", "litigation", "enforcement",
-    "penalty", "penalties", "fine", "fined", "settlement", "settled",
-    "investigation", "probe", "subpoena", "injunction", "ban", "banned",
-    "sanction", "sanctions", "violation", "misconduct",
-    "disgorgement", "restitution", "damages",
+_PROMPT = """You are a research assistant for a journalist monitoring news sources across any beat.
 
-    # Accountability & impact
-    "layoffs", "job cuts", "bankruptcy", "bankrupt",
-    "data exposed", "privacy violation", "surveillance", "spying",
-    "monopoly", "antitrust", "price fixing", "exploitation",
-    "whistleblower", "leak", "internal documents", "exclusive",
-    "misleading", "false claims", "misinformation",
-]
+Given one news item, do two things:
 
-# ── Tier 3: Moderate interest ─────────────────────────────────────────────────
-# Policy changes, technology, notable business/political developments
-_TIER3 = [
-    # Policy & regulation
-    "regulation", "law", "legislation", "bill", "act", "policy",
-    "proposed rule", "final rule", "rulemaking", "amendment",
-    "guidance", "executive order", "mandate",
+1. Rate its newsworthiness on a scale of 1–5:
+     5 = Break immediately / investigate urgently (public safety, major crime, disaster, systemic scandal)
+     4 = High public interest (major legal action, corporate misconduct, significant policy impact)
+     3 = Moderate interest (regulation, notable tech / business / political development)
+     2 = Lower interest (personnel change, scheduled event, routine report)
+     1 = Routine / administrative
 
-    # Technology & privacy
-    "ai", "artificial intelligence", "algorithm", "surveillance tech",
-    "crypto", "bitcoin", "blockchain", "digital asset", "stablecoin",
-    "social media", "platform", "censorship", "content moderation",
+2. Write a one- to two-sentence, plain-English summary of what happened and why it matters.
 
-    # Business & economy
-    "merger", "acquisition", "ipo", "deal", "contract", "partnership",
-    "interest rate", "inflation", "recession", "market crash",
-    "earnings miss", "profit warning", "debt",
+Title: {title}
+Summary: {summary}
 
-    # Government & politics
-    "election", "vote", "ballot", "congress", "senate", "white house",
-    "supreme court", "ruling", "hearing", "testimony",
-]
+Respond with JSON only — no other text:
+{{"score": <integer 1-5>, "reason": "<one sentence justifying the score>", "summary": "<1-2 sentence summary>"}}"""
 
-# ── Tier 2: Lower interest ────────────────────────────────────────────────────
-# Personnel, scheduled events, industry updates
-_TIER2 = [
-    "appoint", "appointed", "appointment", "names", "named",
-    "hire", "hired", "promoted", "promotion", "resign", "retirement",
-    "committee", "meeting", "forum", "conference", "summit", "event",
-    "budget", "annual report", "quarterly", "statistics", "data release",
-    "publishes", "releases report", "study finds", "survey",
-    "partnership announced", "expansion", "new office",
-]
+
+_client = None
+
+
+def _get_client():
+    """Return a cached Anthropic client, or None if no API key is configured."""
+    global _client
+    if _client is None:
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            return None
+        _client = anthropic.Anthropic(api_key=api_key)
+    return _client
+
+
+def analyze_item(title: str, summary: str = "") -> dict:
+    """
+    Ask Claude to score and summarize one item in a single call.
+
+    Returns {"score": int|None, "reason": str, "summary": str}.
+    Never raises: returns score=None with empty strings when the API key is
+    absent or the call fails for any reason.
+    """
+    client = _get_client()
+    if client is None:
+        return {"score": None, "reason": "", "summary": ""}
+
+    try:
+        msg = client.messages.create(
+            model=_MODEL,
+            max_tokens=300,
+            messages=[{"role": "user", "content": _PROMPT.format(
+                title=title, summary=summary or title
+            )}],
+        )
+        raw = msg.content[0].text.strip()
+
+        # Strip markdown fences if the model wrapped its JSON in them.
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].lstrip("json").strip()
+
+        result = json.loads(raw)
+        score = result.get("score")
+        return {
+            "score":   int(score) if score is not None else None,
+            "reason":  result.get("reason", ""),
+            "summary": result.get("summary", ""),
+        }
+    except Exception as e:
+        print(f"    ! analysis failed: {e}")
+        return {"score": None, "reason": "", "summary": ""}
 
 
 def score_newsworthiness(item: dict) -> int:
-    """Return a 1–5 newsworthiness score based on title + summary keywords."""
-    text = f"{item.get('title', '')} {item.get('summary', '')}".lower()
-    if any(kw in text for kw in _TIER5):
-        return 5
-    if any(kw in text for kw in _TIER4):
-        return 4
-    if any(kw in text for kw in _TIER3):
-        return 3
-    if any(kw in text for kw in _TIER2):
-        return 2
-    return 1
+    """
+    Backward-compatible helper used by the web UI: return just the 1–5 score
+    for an item. Falls back to 1 when the AI is unavailable so callers that
+    expect an int always get one.
+    """
+    return analyze_item(item.get("title", ""), item.get("summary", ""))["score"] or 1
