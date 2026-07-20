@@ -4,4 +4,4 @@ openpyxl
 pyyaml
 python-dotenv
 flask
-anthropic
+openai

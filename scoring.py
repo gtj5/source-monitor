@@ -3,11 +3,11 @@ scoring.py
 
 AI-based newsworthiness scorer and summarizer for pipeline items.
 
-Uses Claude Haiku to rate each item 1–5 for newsworthiness AND generate a
+Uses an OpenAI model to rate each item 1–5 for newsworthiness AND generate a
 concise plain-English summary — both in a single API call to keep cost and
 latency down.
 
-Degrades gracefully: if ANTHROPIC_API_KEY is unset or the call fails for any
+Degrades gracefully: if OPENAI_API_KEY is unset or the call fails for any
 reason, it returns a null score and empty text instead of raising, so the
 pipeline and web UI keep working without an API key.
 
@@ -26,12 +26,12 @@ Scale:
 import json
 import os
 
-import anthropic
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
-_MODEL = "claude-haiku-4-5-20251001"
+_MODEL = "gpt-4o-mini"
 
 _PROMPT = """You are a research assistant for a journalist monitoring news sources across any beat.
 
@@ -57,19 +57,19 @@ _client = None
 
 
 def _get_client():
-    """Return a cached Anthropic client, or None if no API key is configured."""
+    """Return a cached OpenAI client, or None if no API key is configured."""
     global _client
     if _client is None:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             return None
-        _client = anthropic.Anthropic(api_key=api_key)
+        _client = OpenAI(api_key=api_key)
     return _client
 
 
 def analyze_item(title: str, summary: str = "") -> dict:
     """
-    Ask Claude to score and summarize one item in a single call.
+    Ask the model to score and summarize one item in a single call.
 
     Returns {"score": int|None, "reason": str, "summary": str}.
     Never raises: returns score=None with empty strings when the API key is
@@ -80,20 +80,15 @@ def analyze_item(title: str, summary: str = "") -> dict:
         return {"score": None, "reason": "", "summary": ""}
 
     try:
-        msg = client.messages.create(
+        resp = client.chat.completions.create(
             model=_MODEL,
             max_tokens=300,
+            response_format={"type": "json_object"},
             messages=[{"role": "user", "content": _PROMPT.format(
                 title=title, summary=summary or title
             )}],
         )
-        raw = msg.content[0].text.strip()
-
-        # Strip markdown fences if the model wrapped its JSON in them.
-        if raw.startswith("```"):
-            raw = raw.split("```")[1].lstrip("json").strip()
-
-        result = json.loads(raw)
+        result = json.loads(resp.choices[0].message.content)
         score = result.get("score")
         return {
             "score":   int(score) if score is not None else None,

@@ -28,7 +28,7 @@ class ScoringTests(unittest.TestCase):
         import os
         import scoring
 
-        saved = os.environ.pop("ANTHROPIC_API_KEY", None)
+        saved = os.environ.pop("OPENAI_API_KEY", None)
         scoring._client = None
         try:
             result = scoring.analyze_item("SEC charges firm with fraud", "")
@@ -37,7 +37,7 @@ class ScoringTests(unittest.TestCase):
             )
         finally:
             if saved is not None:
-                os.environ["ANTHROPIC_API_KEY"] = saved
+                os.environ["OPENAI_API_KEY"] = saved
             scoring._client = None
 
 
